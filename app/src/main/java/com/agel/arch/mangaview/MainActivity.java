@@ -1,5 +1,6 @@
 package com.agel.arch.mangaview;
 
+import android.support.v4.app.Fragment;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBar;
 import android.support.v4.app.FragmentManager;
@@ -7,9 +8,19 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.support.v4.widget.DrawerLayout;
 
+import com.agel.arch.mangaview.fragments.BookmarksFragment;
+import com.agel.arch.mangaview.fragments.FileSystemFragment;
+import com.agel.arch.mangaview.fragments.HistoryFragment;
+import com.agel.arch.mangaview.fragments.SettingsFragment;
+
 
 public class MainActivity extends ActionBarActivity
         implements NavigationDrawerFragment.NavigationDrawerCallbacks {
+
+    public static final int FilesystemSection = 1;
+    public static final int BookmarksSection = 2;
+    public static final int HistorySection = 3;
+    public static final int SettingsSection = 4;
 
     /**
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
@@ -39,24 +50,39 @@ public class MainActivity extends ActionBarActivity
     @Override
     public void onNavigationDrawerItemSelected(int position) {
         // update the main content by replacing fragments
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction()
-                .replace(R.id.container, PlaceholderFragment.newInstance(position + 1))
-                .commit();
+        Fragment fragment = null;
+        switch (position + 1) {
+            case FilesystemSection:
+                fragment = new FileSystemFragment();
+                break;
+            case BookmarksSection:
+                fragment = new BookmarksFragment();
+                break;
+            case HistorySection:
+                fragment = new HistoryFragment();
+                break;
+            case SettingsSection:
+                fragment = new SettingsFragment();
+                break;
+            default:
+                return;
+        }
+
+        getSupportFragmentManager().beginTransaction().replace(R.id.container, fragment).commit();
     }
 
     public void onSectionAttached(int number) {
         switch (number) {
-            case 1:
+            case FilesystemSection:
                 mTitle = getString(R.string.title_filesystem);
                 break;
-            case 2:
+            case BookmarksSection:
                 mTitle = getString(R.string.title_bookmarks);
                 break;
-            case 3:
+            case HistorySection:
                 mTitle = getString(R.string.title_history);
                 break;
-            case 4:
+            case SettingsSection:
                 mTitle = getString(R.string.action_settings);
                 break;
         }
