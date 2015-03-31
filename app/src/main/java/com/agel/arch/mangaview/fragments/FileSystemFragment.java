@@ -1,16 +1,13 @@
 package com.agel.arch.mangaview.fragments;
 
 import android.app.Activity;
-import android.content.Context;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.v4.app.ListFragment;
-import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
 
 import com.agel.arch.mangaview.BackgroundWorker;
-import com.agel.arch.mangaview.MainActivity;
+import com.agel.arch.mangaview.activities.MainActivity;
 import com.agel.arch.mangaview.R;
 import com.agel.arch.mangaview.adapters.FileSystemAdapter;
 import com.agel.arch.mangaview.data.FileEntry;
@@ -44,28 +41,24 @@ public class FileSystemFragment extends ListFragment {
         if(external_storage != null) {
             final FileEntry extStorage = new FileEntry(new File(external_storage), rootEntry);
             rootEntry.Children.add(extStorage);
-            BackgroundWorker.getInstance().put(new Runnable() {
-                @Override
-                public void run() {
-                    scanDir(extStorage);
-                }
-            });
         }
+
         final String secondary_storage = System.getenv("SECONDARY_STORAGE");
         if(secondary_storage != null) {
             final FileEntry secStorage = new FileEntry(new File(secondary_storage), rootEntry);
             rootEntry.Children.add(secStorage);
-            BackgroundWorker.getInstance().put(new Runnable() {
-                @Override
-                public void run() {
-                    scanDir(secStorage);
-                }
-            });
         }
         else
         {
             currentEntry = rootEntry.Children.get(0);
         }
+
+        BackgroundWorker.getInstance().put(new Runnable() {
+            @Override
+            public void run() {
+                scanDir(rootEntry);
+            }
+        });
     }
 
     @Override

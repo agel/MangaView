@@ -8,7 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.agel.arch.mangaview.MainActivity;
+import com.agel.arch.mangaview.activities.MainActivity;
 import com.agel.arch.mangaview.R;
 
 /**

@@ -1,4 +1,4 @@
-package com.agel.arch.mangaview;
+package com.agel.arch.mangaview.activities;
 
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
@@ -9,6 +9,8 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.support.v4.widget.DrawerLayout;
 
+import com.agel.arch.mangaview.NavigationDrawerFragment;
+import com.agel.arch.mangaview.R;
 import com.agel.arch.mangaview.data.Settings;
 import com.agel.arch.mangaview.fragments.BookmarksFragment;
 import com.agel.arch.mangaview.fragments.FileSystemFragment;
