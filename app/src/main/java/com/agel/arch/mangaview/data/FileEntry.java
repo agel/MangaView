@@ -1,6 +1,7 @@
 package com.agel.arch.mangaview.data;
 
 import java.io.File;
+import java.util.ArrayList;
 
 /**
  * Created by agel on 29/03/2015.
@@ -10,19 +11,20 @@ public class FileEntry implements Comparable<FileEntry> {
     public String Path;
     public Boolean isDirectory;
     public String Name;
-    public String Parent;
+    public FileEntry Parent;
+    public ArrayList<FileEntry> Children = new ArrayList<>();
 
     public FileEntry() {
         Path = "";
         Name = "";
-        isDirectory = false;
+        isDirectory = true;
     }
 
-    public FileEntry(File file) {
+    public FileEntry(File file, FileEntry parent) {
         Path = file.getAbsolutePath();
         Name = file.getName();
         isDirectory = file.isDirectory();
-        Parent = file.getParent();
+        Parent = parent;
     }
 
     @Override
@@ -42,9 +44,5 @@ public class FileEntry implements Comparable<FileEntry> {
             else
                 return 1;
         }
-    }
-
-    public FileEntry getParentEntry() {
-        return new FileEntry(new File(Parent));
     }
 }

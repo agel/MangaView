@@ -6,11 +6,14 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.support.v4.app.ListFragment;
 import android.util.Log;
+import android.view.View;
+import android.widget.ListView;
 
 import com.agel.arch.mangaview.BackgroundWorker;
 import com.agel.arch.mangaview.MainActivity;
 import com.agel.arch.mangaview.R;
 import com.agel.arch.mangaview.adapters.FileSystemAdapter;
+import com.agel.arch.mangaview.data.FileEntry;
 
 ;import java.io.File;
 
@@ -20,53 +23,57 @@ import com.agel.arch.mangaview.adapters.FileSystemAdapter;
 public class FileSystemFragment extends ListFragment {
 
     private FileSystemAdapter listAdapter;
+    private FileEntry rootEntry = new FileEntry();
+    private FileEntry currentEntry = rootEntry;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         listAdapter = new FileSystemAdapter(getActivity(), R.layout.fs_item);
         setListAdapter(listAdapter);
-    }
 
-//    @Override
-//    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-//                             Bundle savedInstanceState) {
-//        View rootView = inflater.inflate(R.layout.filesystem_layout, container, false);
-//
-//
-//        return rootView;
-//    }
+        listAdapter.addAll(currentEntry.Children);
+    }
 
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
         ((MainActivity) activity).onSectionAttached(MainActivity.FilesystemSection);
+
         final String external_storage = System.getenv("EXTERNAL_STORAGE");
         if(external_storage != null) {
+            final FileEntry extStorage = new FileEntry(new File(external_storage), rootEntry);
+            rootEntry.Children.add(extStorage);
             BackgroundWorker.getInstance().put(new Runnable() {
                 @Override
                 public void run() {
-                    scanDir(external_storage);
+                    scanDir(extStorage);
                 }
             });
         }
         final String secondary_storage = System.getenv("SECONDARY_STORAGE");
         if(secondary_storage != null) {
+            final FileEntry secStorage = new FileEntry(new File(secondary_storage), rootEntry);
+            rootEntry.Children.add(secStorage);
             BackgroundWorker.getInstance().put(new Runnable() {
                 @Override
                 public void run() {
-                    scanDir(secondary_storage);
+                    scanDir(secStorage);
                 }
             });
         }
+        else
+        {
+            currentEntry = rootEntry.Children.get(0);
+        }
     }
 
-    private void scanDir(String path) {
-        File dir = new File(path);
-        if(dir.isDirectory()) {
+    @Override
+    public void onListItemClick(ListView l, View v, int position, long id) {
 
-        } else {
+    }
 
-        }
+    private void scanDir(FileEntry file) {
+
     }
 }

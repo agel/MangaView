@@ -1,5 +1,6 @@
 package com.agel.arch.mangaview;
 
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBar;
@@ -8,6 +9,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.support.v4.widget.DrawerLayout;
 
+import com.agel.arch.mangaview.data.Settings;
 import com.agel.arch.mangaview.fragments.BookmarksFragment;
 import com.agel.arch.mangaview.fragments.FileSystemFragment;
 import com.agel.arch.mangaview.fragments.HistoryFragment;
@@ -45,6 +47,8 @@ public class MainActivity extends ActionBarActivity
         mNavigationDrawerFragment.setUp(
                 R.id.navigation_drawer,
                 (DrawerLayout) findViewById(R.id.drawer_layout));
+        //Load app settings
+        Settings.getInstance().loadSettings(PreferenceManager.getDefaultSharedPreferences(this), getResources());
     }
 
     @Override
