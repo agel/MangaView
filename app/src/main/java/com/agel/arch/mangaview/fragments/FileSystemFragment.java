@@ -67,7 +67,8 @@ public class FileSystemFragment extends ListFragment {
     }
 
     private void scanDir(FileEntry file) {
-
+        //TODO manually simulate call stack to correctly display loading indicator
+        //TODO update UI only every few seconds.
     }
 
     public boolean onBackPressed() {
