@@ -4,7 +4,6 @@ import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBar;
-import android.support.v4.app.FragmentManager;
 import android.os.Bundle;
 import android.view.Menu;
 import android.support.v4.widget.DrawerLayout;
@@ -35,6 +34,7 @@ public class MainActivity extends ActionBarActivity
      * Used to store the last screen title. For use in {@link #restoreActionBar()}.
      */
     private CharSequence mTitle;
+    private Fragment currentFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,25 +56,25 @@ public class MainActivity extends ActionBarActivity
     @Override
     public void onNavigationDrawerItemSelected(int position) {
         // update the main content by replacing fragments
-        Fragment fragment = null;
+        currentFragment = null;
         switch (position + 1) {
             case FilesystemSection:
-                fragment = new FileSystemFragment();
+                currentFragment = new FileSystemFragment();
                 break;
             case BookmarksSection:
-                fragment = new BookmarksFragment();
+                currentFragment = new BookmarksFragment();
                 break;
             case HistorySection:
-                fragment = new HistoryFragment();
+                currentFragment = new HistoryFragment();
                 break;
             case SettingsSection:
-                fragment = new SettingsFragment();
+                currentFragment = new SettingsFragment();
                 break;
             default:
                 return;
         }
 
-        getSupportFragmentManager().beginTransaction().replace(R.id.container, fragment).commit();
+        getSupportFragmentManager().beginTransaction().replace(R.id.container, currentFragment).commit();
     }
 
     public void onSectionAttached(int number) {
@@ -101,8 +101,13 @@ public class MainActivity extends ActionBarActivity
         actionBar.setTitle(mTitle);
     }
 
+    @Override
+    public void onBackPressed() {
+        if(currentFragment == null || !(currentFragment instanceof FileSystemFragment) || ((FileSystemFragment)currentFragment).onBackPressed() )
+            super.onBackPressed();
+    }
 
-//    @Override
+    //    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         if (!mNavigationDrawerFragment.isDrawerOpen()) {
             // Only show items in the action bar relevant to this screen

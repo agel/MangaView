@@ -63,10 +63,26 @@ public class FileSystemFragment extends ListFragment {
 
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
-
+        setCurrentEntry(listAdapter.getItem(position));
     }
 
     private void scanDir(FileEntry file) {
 
+    }
+
+    public boolean onBackPressed() {
+        if(currentEntry == rootEntry) {
+            return true;
+        }
+
+        setCurrentEntry(currentEntry.Parent);
+
+        return false;
+    }
+
+    private void setCurrentEntry(FileEntry entry) {
+        currentEntry = entry;
+        listAdapter.clear();
+        listAdapter.addAll(currentEntry.Children);
     }
 }
