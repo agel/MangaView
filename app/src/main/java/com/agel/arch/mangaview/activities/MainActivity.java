@@ -7,6 +7,9 @@ import android.support.v7.app.ActionBar;
 import android.os.Bundle;
 import android.view.Menu;
 import android.support.v4.widget.DrawerLayout;
+import android.view.View;
+import android.view.Window;
+import android.widget.ProgressBar;
 
 import com.agel.arch.mangaview.NavigationDrawerFragment;
 import com.agel.arch.mangaview.R;
@@ -35,10 +38,16 @@ public class MainActivity extends ActionBarActivity
      */
     private CharSequence mTitle;
     private Fragment currentFragment;
+    private ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //Progress bar
+        progressBar = new ProgressBar(this);
+        progressBar.setVisibility(View.GONE);
+        progressBar.setIndeterminate(true);
+
         setContentView(R.layout.main_layout);
 
         mNavigationDrawerFragment = (NavigationDrawerFragment)
@@ -51,6 +60,11 @@ public class MainActivity extends ActionBarActivity
                 (DrawerLayout) findViewById(R.id.drawer_layout));
         //Load app settings
         Settings.getInstance().loadSettings(PreferenceManager.getDefaultSharedPreferences(this), getResources());
+
+    }
+
+    public void setLoading(boolean loading) {
+        progressBar.setVisibility(loading ? View.VISIBLE : View.GONE);
     }
 
     @Override
@@ -99,6 +113,8 @@ public class MainActivity extends ActionBarActivity
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
         actionBar.setDisplayShowTitleEnabled(true);
         actionBar.setTitle(mTitle);
+        actionBar.setDisplayShowCustomEnabled(true);
+        actionBar.setCustomView(progressBar);
     }
 
     @Override

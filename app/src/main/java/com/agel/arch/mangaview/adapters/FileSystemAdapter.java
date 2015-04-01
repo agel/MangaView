@@ -22,7 +22,7 @@ public class FileSystemAdapter extends ArrayAdapter<FileEntry> {
     public View getView(int position, View convertView, ViewGroup parent) {
         final TextView txtView = (TextView)super.getView(position, convertView, parent);
 
-        if(this.getItem(position).isDirectory == true)
+        if(this.getItem(position).File.isDirectory() == true)
         {
             txtView.setTextColor(Settings.getInstance().DirectoryColor);
         }

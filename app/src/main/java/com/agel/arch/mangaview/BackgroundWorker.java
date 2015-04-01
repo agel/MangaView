@@ -24,6 +24,7 @@ public class BackgroundWorker {
 
     private BackgroundWorker() {
         int cpuCount = Runtime.getRuntime().availableProcessors();
+//        int cpuCount = 1;
         if(cpuCount == 1) cpuCount++;
 
         for (; cpuCount > 1; cpuCount--)
@@ -36,6 +37,9 @@ public class BackgroundWorker {
                             queue.take().run();
                         } catch (InterruptedException e) {
                             return;
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            throw e;
                         }
                     }
                 }
