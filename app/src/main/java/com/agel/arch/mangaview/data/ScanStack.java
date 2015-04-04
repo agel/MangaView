@@ -1,8 +1,6 @@
 package com.agel.arch.mangaview.data;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -15,11 +13,11 @@ public class ScanStack {
     private HashMap<String, ScanStack> children = new HashMap<>();
     private Lock lck = new ReentrantLock();
 
-    public ScanStack push(FileEntry entry) {
+    public ScanStack push(String path) {
         lck.lock();
         try {
             ScanStack stack = new ScanStack();
-            stack.id = entry.File.getAbsolutePath();
+            stack.id = path;
             children.put(stack.id , stack);
             return stack;
         } finally {
@@ -27,7 +25,7 @@ public class ScanStack {
         }
     }
 
-    public boolean pop(FileEntry entry) {
+    public boolean pop(String path) {
         return false;
     }
 }

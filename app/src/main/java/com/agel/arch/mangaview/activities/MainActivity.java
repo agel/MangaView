@@ -1,18 +1,20 @@
 package com.agel.arch.mangaview.activities;
 
+import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
-import android.support.v7.app.ActionBarActivity;
-import android.support.v7.app.ActionBar;
-import android.os.Bundle;
-import android.view.Menu;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.widget.Toolbar;
+import android.view.Menu;
 import android.view.View;
-import android.view.Window;
 import android.widget.ProgressBar;
 
 import com.agel.arch.mangaview.NavigationDrawerFragment;
 import com.agel.arch.mangaview.R;
+import com.agel.arch.mangaview.data.FileEntryThin;
+import com.agel.arch.mangaview.data.FileScanner;
 import com.agel.arch.mangaview.data.Settings;
 import com.agel.arch.mangaview.fragments.BookmarksFragment;
 import com.agel.arch.mangaview.fragments.FileSystemFragment;
@@ -21,7 +23,7 @@ import com.agel.arch.mangaview.fragments.SettingsFragment;
 
 
 public class MainActivity extends ActionBarActivity
-        implements NavigationDrawerFragment.NavigationDrawerCallbacks {
+        implements NavigationDrawerFragment.NavigationDrawerCallbacks, FileScanner.OnScanProgressListener {
 
     public static final int FilesystemSection = 1;
     public static final int BookmarksSection = 2;
@@ -39,10 +41,12 @@ public class MainActivity extends ActionBarActivity
     private CharSequence mTitle;
     private Fragment currentFragment;
     private ProgressBar progressBar;
+    private FileScanner.IRemoveCallback removeCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         //Progress bar
         progressBar = new ProgressBar(this);
         progressBar.setVisibility(View.GONE);
@@ -61,6 +65,19 @@ public class MainActivity extends ActionBarActivity
         //Load app settings
         Settings.getInstance().loadSettings(PreferenceManager.getDefaultSharedPreferences(this), getResources());
 
+        //Launch scan
+        removeCallback = FileScanner.getInstance().addOnScanProgressListener(this);
+    }
+
+    @Override
+    protected void onDestroy() {
+        removeCallback.remove();
+        super.onDestroy();
+    }
+
+    @Override
+    public void onScanProgress(boolean finished, FileEntryThin lastProcessed) {
+        setLoading(!finished);
     }
 
     public void setLoading(boolean loading) {
@@ -115,6 +132,9 @@ public class MainActivity extends ActionBarActivity
         actionBar.setTitle(mTitle);
         actionBar.setDisplayShowCustomEnabled(true);
         actionBar.setCustomView(progressBar);
+
+        Toolbar.LayoutParams layoutParams = (Toolbar.LayoutParams) progressBar.getLayoutParams();
+        layoutParams.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
     }
 
     @Override
