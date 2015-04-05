@@ -6,14 +6,13 @@ import android.support.v4.app.Fragment;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.View;
 import android.widget.ProgressBar;
 
 import com.agel.arch.mangaview.NavigationDrawerFragment;
 import com.agel.arch.mangaview.R;
-import com.agel.arch.mangaview.data.FileEntryThin;
+import com.agel.arch.mangaview.data.FileEntry;
 import com.agel.arch.mangaview.data.FileScanner;
 import com.agel.arch.mangaview.data.Settings;
 import com.agel.arch.mangaview.fragments.BookmarksFragment;
@@ -66,7 +65,10 @@ public class MainActivity extends ActionBarActivity
         Settings.getInstance().loadSettings(PreferenceManager.getDefaultSharedPreferences(this), getResources());
 
         //Launch scan
-        removeCallback = FileScanner.getInstance().addOnScanProgressListener(this);
+        setLoading(true);
+        FileScanner scanner = FileScanner.getInstance();
+        removeCallback = scanner.addOnScanProgressListener(this);
+        scanner.scan();
     }
 
     @Override
@@ -76,11 +78,17 @@ public class MainActivity extends ActionBarActivity
     }
 
     @Override
-    public void onScanProgress(boolean finished, FileEntryThin lastProcessed) {
-        setLoading(!finished);
+    public void onScanProgress(boolean finished, FileEntry lastProcessed) {
+        if(finished) {
+            this.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    setLoading(false);   }
+            });
+        }
     }
 
-    public void setLoading(boolean loading) {
+    public void setLoading(final boolean loading) {
         progressBar.setVisibility(loading ? View.VISIBLE : View.GONE);
     }
 
@@ -133,8 +141,8 @@ public class MainActivity extends ActionBarActivity
         actionBar.setDisplayShowCustomEnabled(true);
         actionBar.setCustomView(progressBar);
 
-        Toolbar.LayoutParams layoutParams = (Toolbar.LayoutParams) progressBar.getLayoutParams();
-        layoutParams.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+//        Toolbar.LayoutParams layoutParams = (Toolbar.LayoutParams) progressBar.getLayoutParams();
+//        layoutParams.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
     }
 
     @Override

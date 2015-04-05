@@ -23,7 +23,6 @@ public class BackgroundWorker {
 
     private BackgroundWorker() {
         int cpuCount = Runtime.getRuntime().availableProcessors();
-//        int cpuCount = 1;
         if(cpuCount == 1) cpuCount++;
 
         for (; cpuCount > 1; cpuCount--)
@@ -46,10 +45,6 @@ public class BackgroundWorker {
             workers.add(thread);
             thread.start();
         }
-    }
-
-    public boolean offer(Runnable work) {
-        return queue.offer(work);
     }
 
     public void put(Runnable work) {

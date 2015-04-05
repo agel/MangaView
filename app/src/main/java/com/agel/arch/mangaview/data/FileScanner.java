@@ -24,7 +24,7 @@ public class FileScanner {
 
     //Event
     public interface OnScanProgressListener {
-        void onScanProgress(boolean finished, FileEntryThin lastProcessed);
+        void onScanProgress(boolean finished, FileEntry lastProcessed);
     }
     public interface IRemoveCallback {
         void remove();
@@ -32,12 +32,12 @@ public class FileScanner {
 
     //Members
     private ArrayList<OnScanProgressListener> eventListeners = new ArrayList<>();
-    private boolean scanInProgress = false;
-    private FileEntryThin rootEntry;
+    private boolean finished = false;
+    private FileEntry rootEntry;
 
     //Getters/Setters
     public boolean isScanning() {
-        return scanInProgress;
+        return finished;
     }
     public IRemoveCallback addOnScanProgressListener(final OnScanProgressListener listener) {
         eventListeners.add(listener);
@@ -48,31 +48,36 @@ public class FileScanner {
             }
         };
     }
-    public FileEntryThin getRoot() {
+    public FileEntry getRoot() {
         return rootEntry;
     }
 
     //Methods
     private void init() {
         final String external_storage = System.getenv("EXTERNAL_STORAGE");
-        rootEntry = new FileEntryThin();
+        rootEntry = new FileEntry();
 
         if(external_storage != null) {
-            new FileEntryThin(new File(external_storage), rootEntry);
+            new FileEntry(new File(external_storage), rootEntry);
         }
 
         final String secondary_storage = System.getenv("SECONDARY_STORAGE");
         if(secondary_storage != null) {
-            new FileEntryThin(new File(secondary_storage), rootEntry);
+            new FileEntry(new File(secondary_storage), rootEntry);
         }
-
-        ScanStack stack = new ScanStack();
-
-        scanInProgress = true;
-        queueScan(rootEntry, stack);
     }
 
-    private void queueScan(final FileEntryThin entry, final ScanStack stack) {
+    public void scan() {
+        finished = false;
+        synchronized (rootEntry.Children) {
+            for (FileEntry entry : rootEntry.Children) {
+                entry.clear();
+            }
+        }
+        queueScan(rootEntry, new ScanStack());
+    }
+
+    private void queueScan(final FileEntry entry, final ScanStack stack) {
         BackgroundWorker.getInstance().put(new Runnable() {
             @Override
             public void run() {
@@ -81,11 +86,13 @@ public class FileScanner {
         });
     }
 
-    private void scanDir(FileEntryThin entry, ScanStack stack) {
+    private void scanDir(FileEntry entry, ScanStack stack) {
         //Scan directories
         if(entry.Path == null)  {
-            for (FileEntryThin fileEntry : entry.Children) {
-                queueScan(fileEntry, stack.push(fileEntry.Path));
+            synchronized (entry.Children) {
+                for (FileEntry fileEntry : entry.Children) {
+                    queueScan(fileEntry, stack.push(fileEntry.Path));
+                }
             }
         } else {
             File[] contents = new File(entry.Path).listFiles(new FileFilter() {
@@ -102,21 +109,21 @@ public class FileScanner {
             });
 
             if(contents != null) {
-
                 for (File file : contents) {
-                    FileEntryThin fileEntry = new FileEntryThin(file, entry);
+                    FileEntry fileEntry = new FileEntry(file, entry);
                     if (file.isDirectory()) {
-                        queueScan(fileEntry, stack);
+                        queueScan(fileEntry, stack.push(fileEntry.Path));
                     }
                 }
+                entry.sort();
             } else {
                 Log.w("Manga", "WTF? - " + entry.Path);
             }
         }
 
-        scanInProgress = stack.pop(entry.Path);
+        finished = stack.pop(entry.Path);
         for(OnScanProgressListener listener : eventListeners) {
-            listener.onScanProgress(scanInProgress, entry);
+            listener.onScanProgress(finished, entry);
         }
     }
 }

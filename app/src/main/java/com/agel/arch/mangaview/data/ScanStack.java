@@ -18,7 +18,8 @@ public class ScanStack {
         try {
             ScanStack stack = new ScanStack();
             stack.id = path;
-            children.put(stack.id , stack);
+            stack.parent = this;
+            children.put(stack.id, stack);
             return stack;
         } finally {
             lck.unlock();
@@ -26,6 +27,21 @@ public class ScanStack {
     }
 
     public boolean pop(String path) {
-        return false;
+        lck.lock();
+        boolean allChildrenProcessed;
+        try {
+            children.remove(path);
+            allChildrenProcessed = children.size() == 0;
+        } finally {
+            lck.unlock();
+        }
+        boolean ret = false;
+        if(allChildrenProcessed) {
+            if (parent != null)
+                ret = parent.pop(id);
+            else
+                ret = true;
+        }
+        return ret;
     }
 }

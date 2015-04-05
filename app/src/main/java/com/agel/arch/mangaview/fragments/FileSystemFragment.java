@@ -9,7 +9,7 @@ import android.widget.ListView;
 import com.agel.arch.mangaview.R;
 import com.agel.arch.mangaview.activities.MainActivity;
 import com.agel.arch.mangaview.adapters.FileSystemAdapter;
-import com.agel.arch.mangaview.data.FileEntryThin;
+import com.agel.arch.mangaview.data.FileEntry;
 import com.agel.arch.mangaview.data.FileScanner;
 
 import java.util.Date;
@@ -22,8 +22,8 @@ import java.util.Date;
 public class FileSystemFragment extends ListFragment implements FileScanner.OnScanProgressListener {
 
     private FileSystemAdapter listAdapter;
-    private FileEntryThin rootEntry = FileScanner.getInstance().getRoot();
-    private FileEntryThin currentEntry = rootEntry;
+    private FileEntry rootEntry = FileScanner.getInstance().getRoot();
+    private FileEntry currentEntry = rootEntry;
     private MainActivity mainActivity;
     private long lastUIUpdate = 0;
     private FileScanner.IRemoveCallback removeCallback;
@@ -35,7 +35,9 @@ public class FileSystemFragment extends ListFragment implements FileScanner.OnSc
         listAdapter = new FileSystemAdapter(getActivity(), R.layout.fs_item);
         setListAdapter(listAdapter);
 
-        listAdapter.addAll(currentEntry.Children);
+        synchronized (currentEntry.Children) {
+            listAdapter.addAll(currentEntry.Children);
+        }
 
         removeCallback = FileScanner.getInstance().addOnScanProgressListener(this);
     }
@@ -55,7 +57,12 @@ public class FileSystemFragment extends ListFragment implements FileScanner.OnSc
 
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
-        setCurrentEntry(listAdapter.getItem(position));
+        FileEntry item = listAdapter.getItem(position);
+        if(item.IsDirectory) {
+            setCurrentEntry(item);
+        } else {
+            //TODO open view activity
+        }
     }
 
     public boolean onBackPressed() {
@@ -68,14 +75,16 @@ public class FileSystemFragment extends ListFragment implements FileScanner.OnSc
         return false;
     }
 
-    private void setCurrentEntry(FileEntryThin entry) {
+    private void setCurrentEntry(FileEntry entry) {
         currentEntry = entry;
         listAdapter.clear();
-        listAdapter.addAll(currentEntry.Children);
+        synchronized (currentEntry.Children) {
+            listAdapter.addAll(currentEntry.Children);
+        }
     }
 
     @Override
-    public void onScanProgress(boolean finished, FileEntryThin entry) {
+    public void onScanProgress(boolean finished, FileEntry entry) {
         long time = new Date().getTime();
         if(currentEntry == entry &&  time - lastUIUpdate > 10000) {
             lastUIUpdate = time;
@@ -83,7 +92,9 @@ public class FileSystemFragment extends ListFragment implements FileScanner.OnSc
                 @Override
                 public void run() {
                     listAdapter.clear();
-                    listAdapter.addAll(currentEntry.Children);
+                    synchronized (currentEntry.Children) {
+                        listAdapter.addAll(currentEntry.Children);
+                    }
                 }
             });
         }
