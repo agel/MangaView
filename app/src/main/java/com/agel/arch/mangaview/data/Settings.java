@@ -5,6 +5,7 @@ import java.util.Hashtable;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Environment;
 import android.view.KeyEvent;
@@ -32,15 +33,6 @@ public class Settings {
     public static final String PrefsId_keys_zoom_in = "prefs_KeyZoomIn";
     public static final String PrefsId_keys_zoom_out = "prefs_KeyZoomOut";
 
-
-
-    public enum GestureActions {
-        NEXT,BACK,ZOOM_IN,ZOOM_OUT
-    }
-    public enum GestureDirections {
-        NONE,LEFT,RIGHT,UP,DOWN
-    }
-    
     private static Settings instance;
     public static Settings getInstance() {
         if(instance == null) {
@@ -312,5 +304,9 @@ public class Settings {
     }
     static public void makeToast(Context context, String message) {
         Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+    }
+
+    public static boolean isTablet(Context ctx){
+        return (ctx.getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >= Configuration.SCREENLAYOUT_SIZE_LARGE;
     }
 }

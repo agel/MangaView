@@ -1,13 +1,14 @@
 package com.agel.arch.mangaview.fragments;
 
 import android.app.Activity;
-import android.os.Bundle;
+import android.content.Intent;
 import android.support.v4.app.ListFragment;
 import android.view.View;
 import android.widget.ListView;
 
 import com.agel.arch.mangaview.R;
 import com.agel.arch.mangaview.activities.MainActivity;
+import com.agel.arch.mangaview.activities.MangaViewActivity;
 import com.agel.arch.mangaview.adapters.FileSystemAdapter;
 import com.agel.arch.mangaview.data.FileEntry;
 import com.agel.arch.mangaview.data.FileScanner;
@@ -22,30 +23,14 @@ import java.util.Date;
 public class FileSystemFragment extends ListFragment implements FileScanner.OnScanProgressListener {
 
     private FileSystemAdapter listAdapter;
-    private FileEntry rootEntry = FileScanner.getInstance().getRoot();
-    private FileEntry currentEntry = rootEntry;
     private MainActivity mainActivity;
     private long lastUIUpdate = 0;
     private FileScanner.IRemoveCallback removeCallback;
 
-
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        listAdapter = new FileSystemAdapter(getActivity(), R.layout.fs_item);
-        setListAdapter(listAdapter);
-
-        synchronized (currentEntry.Children) {
-            listAdapter.addAll(currentEntry.Children);
-        }
-
-        removeCallback = FileScanner.getInstance().addOnScanProgressListener(this);
-    }
-
-    @Override
-    public void onDestroy() {
+    public void onDetach() {
         removeCallback.remove();
-        super.onDestroy();
+        super.onDetach();
     }
 
     @Override
@@ -53,6 +38,15 @@ public class FileSystemFragment extends ListFragment implements FileScanner.OnSc
         super.onAttach(activity);
         mainActivity = (MainActivity) activity;
         mainActivity.onSectionAttached(MainActivity.FilesystemSection);
+
+        listAdapter = new FileSystemAdapter(getActivity(), R.layout.fs_item);
+        setListAdapter(listAdapter);
+
+        removeCallback = FileScanner.getInstance().addOnScanProgressListener(this);
+
+        synchronized (mainActivity.CurrentFsEntry.Children) {
+            listAdapter.addAll(mainActivity.CurrentFsEntry.Children);
+        }
     }
 
     @Override
@@ -61,39 +55,41 @@ public class FileSystemFragment extends ListFragment implements FileScanner.OnSc
         if(item.IsDirectory) {
             setCurrentEntry(item);
         } else {
-            //TODO open view activity
+            Intent intent = new Intent(mainActivity, MangaViewActivity.class);
+            intent.putExtra(MangaViewActivity.ImagePath, item.Path);
+            startActivity(intent);
         }
     }
 
     public boolean onBackPressed() {
-        if(currentEntry == rootEntry) {
+        if(mainActivity.CurrentFsEntry == mainActivity.RootEntry) {
             return true;
         }
 
-        setCurrentEntry(currentEntry.Parent);
+        setCurrentEntry(mainActivity.CurrentFsEntry.Parent);
 
         return false;
     }
 
     private void setCurrentEntry(FileEntry entry) {
-        currentEntry = entry;
+        mainActivity.CurrentFsEntry = entry;
         listAdapter.clear();
-        synchronized (currentEntry.Children) {
-            listAdapter.addAll(currentEntry.Children);
+        synchronized (mainActivity.CurrentFsEntry.Children) {
+            listAdapter.addAll(mainActivity.CurrentFsEntry.Children);
         }
     }
 
     @Override
     public void onScanProgress(boolean finished, FileEntry entry) {
         long time = new Date().getTime();
-        if(currentEntry == entry &&  time - lastUIUpdate > 10000) {
+        if(mainActivity.CurrentFsEntry == entry &&  time - lastUIUpdate > 10000) {
             lastUIUpdate = time;
             mainActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     listAdapter.clear();
-                    synchronized (currentEntry.Children) {
-                        listAdapter.addAll(currentEntry.Children);
+                    synchronized (mainActivity.CurrentFsEntry.Children) {
+                        listAdapter.addAll(mainActivity.CurrentFsEntry.Children);
                     }
                 }
             });

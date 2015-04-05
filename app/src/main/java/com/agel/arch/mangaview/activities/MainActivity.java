@@ -41,6 +41,9 @@ public class MainActivity extends ActionBarActivity
     private Fragment currentFragment;
     private ProgressBar progressBar;
     private FileScanner.IRemoveCallback removeCallback;
+    //FS state
+    public FileEntry RootEntry = FileScanner.getInstance().getRoot();
+    public FileEntry CurrentFsEntry = RootEntry;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
