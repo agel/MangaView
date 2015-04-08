@@ -1,20 +1,18 @@
 package com.agel.arch.mangaview.data;
 
-import java.util.EnumMap;
-import java.util.Hashtable;
-
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Environment;
 import android.view.KeyEvent;
 import android.widget.Toast;
 
+import java.util.EnumMap;
+import java.util.Hashtable;
+
 public class Settings {
     public static final String PrefsId_lib_root = "prefs_LibraryRoot";
     public static final String PrefsId_show_with_images = "prefs_ShowWithImages";
-    public static final String PrefsId_viewer_fullscreen = "prefs_ViewerFullscreen";
     public static final String PrefsId_zoom_factor = "prefs_ZoomFactor";
     public static final String PrefsId_directory_color = "prefs_DirectoryColor";
     public static final String PrefsId_file_color = "prefs_FileColor";
@@ -22,7 +20,6 @@ public class Settings {
     public static final String PrefsId_swipe_shape_threshold = "prefs_SwipeShapeThreshold";
     public static final String PrefsId_swipe_length_threshold = "prefs_SwipeLengthThreshold";
     public static final String PrefsId_cancel_tremble_threshold = "prefs_CancelTrembleThreshold";
-    public static final String PrefsId_db_sdcard = "prefs_DatabaseOnSD";
 
     public static final String PrefsId_gestures_next_page = "prefs_GestureNexPage";
     public static final String PrefsId_gestures_prev_page = "prefs_GesturePrevPage";
@@ -47,7 +44,6 @@ public class Settings {
     //settings
     public String LibraryRoot;
     public Boolean ShowOnlyFoldersWithImages;
-    public Boolean FullscreenViewer;
     public int ZoomFactor;
     public int DirectoryColor;
     public int FileColor;
@@ -64,8 +60,6 @@ public class Settings {
     public int KeyZoomIn;
     public int KeyZoomOut;
 
-    //state variables
-    public String state_LastActivity;
     public EnumMap<GestureDirections,GestureActions> mGestureSetting;
     public Hashtable<Integer,GestureActions> mKeySetting;
 
@@ -89,15 +83,6 @@ public class Settings {
         }
         else
             ShowOnlyFoldersWithImages = prefs.getBoolean(PrefsId_show_with_images, true);
-
-        //FullscreenViewer---------------------------------------------------------------
-        if(!prefs.contains(PrefsId_viewer_fullscreen))
-        {
-            FullscreenViewer = true;
-            needSave = true;
-        }
-        else
-            FullscreenViewer = prefs.getBoolean(PrefsId_viewer_fullscreen, true);
 
         //ZoomFactor------------------------------------------------------------------------
         if(!prefs.contains(PrefsId_zoom_factor))
@@ -237,13 +222,13 @@ public class Settings {
         if(needSave)
             saveSettings(prefs,res);
 
-        setupBinings();
+        setupBindings();
     }
 
-    private void setupBinings(){
+    private void setupBindings(){
         Settings settings = Settings.getInstance();
         //Gestures
-        mGestureSetting = new EnumMap<GestureDirections,GestureActions>(GestureDirections.class);
+        mGestureSetting = new EnumMap<>(GestureDirections.class);
 
         //next page
         if(settings.GestureNextPage != GestureDirections.NONE)
@@ -259,7 +244,7 @@ public class Settings {
             mGestureSetting.put(settings.GestureZoomOut, GestureActions.ZOOM_OUT);
 
         //Keys
-        mKeySetting = new Hashtable<Integer,GestureActions>();
+        mKeySetting = new Hashtable<>();
 
         //next page
         if(settings.KeyNextPage != KeyEvent.KEYCODE_UNKNOWN)
@@ -285,7 +270,6 @@ public class Settings {
 
         prefsEdit.putString(PrefsId_lib_root, LibraryRoot);
         prefsEdit.putBoolean(PrefsId_show_with_images, ShowOnlyFoldersWithImages);
-        prefsEdit.putBoolean(PrefsId_viewer_fullscreen, FullscreenViewer);
         prefsEdit.putInt(PrefsId_zoom_factor, ZoomFactor);
         prefsEdit.putInt(PrefsId_directory_color, DirectoryColor);
         prefsEdit.putInt(PrefsId_file_color, FileColor);
@@ -304,9 +288,5 @@ public class Settings {
     }
     static public void makeToast(Context context, String message) {
         Toast.makeText(context, message, Toast.LENGTH_LONG).show();
-    }
-
-    public static boolean isTablet(Context ctx){
-        return (ctx.getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >= Configuration.SCREENLAYOUT_SIZE_LARGE;
     }
 }

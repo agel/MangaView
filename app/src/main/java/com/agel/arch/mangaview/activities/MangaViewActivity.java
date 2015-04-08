@@ -1,10 +1,6 @@
 package com.agel.arch.mangaview.activities;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
-import android.content.Context;
-import android.content.res.Configuration;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -13,20 +9,12 @@ import android.view.Window;
 import android.view.WindowManager;
 
 import com.agel.arch.mangaview.R;
-import com.agel.arch.mangaview.activities.util.SystemUiHider;
 import com.agel.arch.mangaview.data.Settings;
 
-/**
- * An example full-screen activity that shows and hides the system UI (i.e.
- * status bar and navigation/system bar) with user interaction.
- *
- * @see SystemUiHider
- */
 public class MangaViewActivity extends Activity {
     private static final String TAG = "MangaViewActivity";
 
     public static final String ImagePath = "Path";
-    private SystemUiHider mSystemUiHider;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,54 +25,23 @@ public class MangaViewActivity extends Activity {
 
         setContentView(R.layout.activity_manga_view);
 
-        if( android.os.Build.VERSION.SDK_INT >= 14) {
-            if (Settings.getInstance().FullscreenViewer) {
+        int fullScreenFlags = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+        fullScreenFlags ^= View.SYSTEM_UI_FLAG_FULLSCREEN;
+        fullScreenFlags ^= View.SYSTEM_UI_FLAG_LOW_PROFILE;
 
-                final View decorView = getWindow().getDecorView();
-
-                int newUiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
-
-                if (Build.VERSION.SDK_INT >= 16) {
-                    newUiOptions ^= View.SYSTEM_UI_FLAG_FULLSCREEN;
-                    newUiOptions ^= View.STATUS_BAR_HIDDEN;
-                    if(android.os.Build.VERSION.SDK_INT >= 18) {
-                        newUiOptions ^= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
-                    }
-                } else {
-                    getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-                }
-
-                decorView.setSystemUiVisibility(newUiOptions);
-            }
-            else
-                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        if(android.os.Build.VERSION.SDK_INT >= 18) {
+            fullScreenFlags ^= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
         }
+        final View decorView = getWindow().getDecorView();
 
-        final View contentView = findViewById(R.id.view_manga);
-
-        if(Settings.isTablet(this)) {
-            // Set up an instance of SystemUiHider to control the system UI for this activity.
-            mSystemUiHider = SystemUiHider.getInstance(this, contentView, SystemUiHider.FLAG_HIDE_NAVIGATION);
-            mSystemUiHider.setup();
-            mSystemUiHider.setOnVisibilityChangeListener(new SystemUiHider.OnVisibilityChangeListener() {
-                // Cached values.
-                @Override
-                @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
-                public void onVisibilityChange(boolean visible) {
-                    if (visible) {
-                        // Schedule a hide().
-                        delayedHide(500);
-                    }
-                }
-            });
-        }
+        decorView.setSystemUiVisibility(fullScreenFlags);
     }
 
     Handler mHideHandler = new Handler();
     Runnable mHideRunnable = new Runnable() {
         @Override
         public void run() {
-            mSystemUiHider.hide();
+            //TODO set low profile on tablets
         }
     };
 
