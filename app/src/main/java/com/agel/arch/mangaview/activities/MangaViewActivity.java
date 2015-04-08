@@ -7,6 +7,7 @@ import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -22,6 +23,7 @@ import com.agel.arch.mangaview.data.Settings;
  * @see SystemUiHider
  */
 public class MangaViewActivity extends Activity {
+    private static final String TAG = "MangaViewActivity";
 
     public static final String ImagePath = "Path";
     private SystemUiHider mSystemUiHider;
@@ -29,6 +31,7 @@ public class MangaViewActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate");
 
         requestWindowFeature(Window.FEATURE_NO_TITLE);
 

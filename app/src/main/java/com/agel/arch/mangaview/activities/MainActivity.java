@@ -6,23 +6,26 @@ import android.support.v4.app.Fragment;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.ProgressBar;
 
-import com.agel.arch.mangaview.NavigationDrawerFragment;
+import com.agel.arch.mangaview.fragments.NavigationDrawerFragment;
 import com.agel.arch.mangaview.R;
 import com.agel.arch.mangaview.data.FileEntry;
-import com.agel.arch.mangaview.data.FileScanner;
 import com.agel.arch.mangaview.data.Settings;
-import com.agel.arch.mangaview.fragments.BookmarksFragment;
-import com.agel.arch.mangaview.fragments.FileSystemFragment;
-import com.agel.arch.mangaview.fragments.HistoryFragment;
-import com.agel.arch.mangaview.fragments.SettingsFragment;
+import com.agel.arch.mangaview.fragments.manga.BookmarksFragment;
+import com.agel.arch.mangaview.fragments.manga.FileSystemFragment;
+import com.agel.arch.mangaview.fragments.manga.HistoryFragment;
+import com.agel.arch.mangaview.fragments.manga.SettingsFragment;
+import com.agel.arch.mangaview.fragments.FsModelFragment;
 
 
 public class MainActivity extends ActionBarActivity
-        implements NavigationDrawerFragment.NavigationDrawerCallbacks, FileScanner.OnScanProgressListener {
+        implements NavigationDrawerFragment.NavigationDrawerCallbacks, FsModelFragment.OnScanProgressObserver {
+
+    private static final String TAG = "MainActivity";
 
     public static final int FilesystemSection = 1;
     public static final int BookmarksSection = 2;
@@ -40,14 +43,16 @@ public class MainActivity extends ActionBarActivity
     private CharSequence mTitle;
     private Fragment currentFragment;
     private ProgressBar progressBar;
-    private FileScanner.IRemoveCallback removeCallback;
+
     //FS state
-    public FileEntry RootEntry = FileScanner.getInstance().getRoot();
-    public FileEntry CurrentFsEntry = RootEntry;
+    private FsModelFragment modelFragment;
+    private FileEntry rootEntry;
+    private FileEntry currentFsEntry;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate");
 
         //Progress bar
         progressBar = new ProgressBar(this);
@@ -68,20 +73,50 @@ public class MainActivity extends ActionBarActivity
         Settings.getInstance().loadSettings(PreferenceManager.getDefaultSharedPreferences(this), getResources());
 
         //Launch scan
-        setLoading(true);
-        FileScanner scanner = FileScanner.getInstance();
-        removeCallback = scanner.addOnScanProgressListener(this);
-        scanner.scan();
+        modelFragment = (FsModelFragment) getSupportFragmentManager().findFragmentByTag(FsModelFragment.TAG);
+        if(modelFragment == null) {
+            modelFragment = new FsModelFragment();
+
+            rootEntry = modelFragment.getRootEntry();
+            currentFsEntry = rootEntry;
+
+            modelFragment.addChangeListener(this);
+            modelFragment.scan();
+        } else {
+            modelFragment.addChangeListener(this);
+        }
+        setLoading(!modelFragment.isScanFinished());
     }
 
     @Override
     protected void onDestroy() {
-        removeCallback.remove();
+        Log.d(TAG, "onDestroy");
         super.onDestroy();
+
+        modelFragment.removeChangeListener(this);
+        if(isFinishing()) {
+            modelFragment.shutdown();
+        }
+    }
+
+    public FileEntry getRootEntry() {
+        return rootEntry;
+    }
+
+    public FileEntry getCurrentFsEntry() {
+        return currentFsEntry;
+    }
+
+    public FsModelFragment getModelFragment() {
+        return modelFragment;
+    }
+
+    public void setCurrentFsEntry(FileEntry currentFsEntry) {
+        this.currentFsEntry = currentFsEntry;
     }
 
     @Override
-    public void onScanProgress(boolean finished, FileEntry lastProcessed) {
+    public void onScanProgressChanged(boolean finished, FileEntry lastProcessed) {
         if(finished) {
             this.runOnUiThread(new Runnable() {
                 @Override

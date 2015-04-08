@@ -1,4 +1,4 @@
-package com.agel.arch.mangaview;
+package com.agel.arch.mangaview.fragments;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
@@ -20,6 +20,8 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+
+import com.agel.arch.mangaview.R;
 
 /**
  * Fragment used for managing interactions for and presentation of a navigation drawer.

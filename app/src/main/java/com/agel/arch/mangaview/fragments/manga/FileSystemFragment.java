@@ -1,4 +1,4 @@
-package com.agel.arch.mangaview.fragments;
+package com.agel.arch.mangaview.fragments.manga;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -11,25 +11,26 @@ import com.agel.arch.mangaview.activities.MainActivity;
 import com.agel.arch.mangaview.activities.MangaViewActivity;
 import com.agel.arch.mangaview.adapters.FileSystemAdapter;
 import com.agel.arch.mangaview.data.FileEntry;
-import com.agel.arch.mangaview.data.FileScanner;
+import com.agel.arch.mangaview.fragments.FsModelFragment;
 
 import java.util.Date;
+import java.util.List;
 
-;
 
 /**
  * A placeholder fragment containing a simple view.
  */
-public class FileSystemFragment extends ListFragment implements FileScanner.OnScanProgressListener {
+public class FileSystemFragment extends ListFragment implements FsModelFragment.OnScanProgressObserver {
+
+    public static final int UI_UPDATE_INTERVAL = 10000;
 
     private FileSystemAdapter listAdapter;
     private MainActivity mainActivity;
     private long lastUIUpdate = 0;
-    private FileScanner.IRemoveCallback removeCallback;
 
     @Override
     public void onDetach() {
-        removeCallback.remove();
+        mainActivity.getModelFragment().removeChangeListener(this);
         super.onDetach();
     }
 
@@ -42,10 +43,11 @@ public class FileSystemFragment extends ListFragment implements FileScanner.OnSc
         listAdapter = new FileSystemAdapter(getActivity(), R.layout.fs_item);
         setListAdapter(listAdapter);
 
-        removeCallback = FileScanner.getInstance().addOnScanProgressListener(this);
+        mainActivity.getModelFragment().addChangeListener(this);
 
-        synchronized (mainActivity.CurrentFsEntry.Children) {
-            listAdapter.addAll(mainActivity.CurrentFsEntry.Children);
+        final List<FileEntry> children = mainActivity.getCurrentFsEntry().Children;
+        synchronized (children) {
+            listAdapter.addAll(children);
         }
     }
 
@@ -62,34 +64,36 @@ public class FileSystemFragment extends ListFragment implements FileScanner.OnSc
     }
 
     public boolean onBackPressed() {
-        if(mainActivity.CurrentFsEntry == mainActivity.RootEntry) {
+        if(mainActivity.getCurrentFsEntry() == mainActivity.getRootEntry()) {
             return true;
         }
 
-        setCurrentEntry(mainActivity.CurrentFsEntry.Parent);
+        setCurrentEntry(mainActivity.getCurrentFsEntry().Parent);
 
         return false;
     }
 
     private void setCurrentEntry(FileEntry entry) {
-        mainActivity.CurrentFsEntry = entry;
+        mainActivity.setCurrentFsEntry(entry);
         listAdapter.clear();
-        synchronized (mainActivity.CurrentFsEntry.Children) {
-            listAdapter.addAll(mainActivity.CurrentFsEntry.Children);
+        final List<FileEntry> entries = mainActivity.getCurrentFsEntry().Children;
+        synchronized (entries) {
+            listAdapter.addAll(entries);
         }
     }
 
     @Override
-    public void onScanProgress(boolean finished, FileEntry entry) {
+    public void onScanProgressChanged(boolean finished, FileEntry entry) {
         long time = new Date().getTime();
-        if(mainActivity.CurrentFsEntry == entry &&  time - lastUIUpdate > 10000) {
+        if(mainActivity.getCurrentFsEntry() == entry &&  time - lastUIUpdate > UI_UPDATE_INTERVAL) {
             lastUIUpdate = time;
             mainActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     listAdapter.clear();
-                    synchronized (mainActivity.CurrentFsEntry.Children) {
-                        listAdapter.addAll(mainActivity.CurrentFsEntry.Children);
+                    final List<FileEntry> entries = mainActivity.getCurrentFsEntry().Children;
+                    synchronized (entries) {
+                        listAdapter.addAll(entries);
                     }
                 }
             });

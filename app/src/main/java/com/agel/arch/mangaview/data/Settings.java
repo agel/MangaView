@@ -120,7 +120,7 @@ public class Settings {
         //FileColor----------------------------------------------------------------------------------
         if(!prefs.contains(PrefsId_file_color))
         {
-            FileColor = 0xFFFFFFFF;
+            FileColor = 0xFF000000;
             needSave = true;
         }
         else
