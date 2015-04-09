@@ -21,8 +21,8 @@ public class MangaFileFilter implements FileFilter {
         if(file.isHidden())
             return false;
 
-        if(!includeDirectories && file.isDirectory())
-            return false;
+        if(file.isDirectory())
+            return includeDirectories;
 
         return (filename.endsWith(".png") ||
                 filename.endsWith(".jpg") ||
