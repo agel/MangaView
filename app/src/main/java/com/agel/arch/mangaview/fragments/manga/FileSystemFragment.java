@@ -13,6 +13,7 @@ import com.agel.arch.mangaview.adapters.FileSystemAdapter;
 import com.agel.arch.mangaview.data.FileEntry;
 import com.agel.arch.mangaview.fragments.FsModelFragment;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 

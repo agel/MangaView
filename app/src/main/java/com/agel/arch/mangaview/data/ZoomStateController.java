@@ -147,14 +147,6 @@ public class ZoomStateController extends Observable {
 		}	
 	}
 
-	public GestureDirections getSwipeState() {
-		return mSwipeState;
-	}
-
-	public void setSwipeState(GestureDirections mSwipeState) {
-		this.mSwipeState = mSwipeState;
-	}
-
 	public void setZoomFactor(int mZoomFactor) {
 		this.mZoomFactor = mZoomFactor;		
 	}

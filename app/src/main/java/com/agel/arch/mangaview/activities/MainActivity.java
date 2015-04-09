@@ -73,9 +73,10 @@ public class MainActivity extends ActionBarActivity
         Settings.getInstance().loadSettings(PreferenceManager.getDefaultSharedPreferences(this), getResources());
 
         //Launch scan
-        modelFragment = (FsModelFragment) getSupportFragmentManager().findFragmentByTag(FsModelFragment.TAG);
+        modelFragment = (FsModelFragment) getFragmentManager().findFragmentByTag(FsModelFragment.TAG);
         if(modelFragment == null) {
             modelFragment = new FsModelFragment();
+            getFragmentManager().beginTransaction().add(modelFragment, FsModelFragment.TAG).commit();
 
             rootEntry = modelFragment.getRootEntry();
             currentFsEntry = rootEntry;

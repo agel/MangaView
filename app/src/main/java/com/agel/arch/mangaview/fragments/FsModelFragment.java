@@ -2,14 +2,14 @@ package com.agel.arch.mangaview.fragments;
 
 import android.database.Observable;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
+import android.app.Fragment;
 import android.util.Log;
 
 import com.agel.arch.mangaview.data.FileEntry;
+import com.agel.arch.mangaview.data.MangaFileFilter;
 import com.agel.arch.mangaview.data.ScanStack;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -115,18 +115,7 @@ public class FsModelFragment extends Fragment {
                 }
             }
         } else {
-            File[] contents = new File(entry.Path).listFiles(new FileFilter() {
-                @Override
-                public boolean accept(File pathname) {
-                    String filename = pathname.getName().toLowerCase();
-
-                    return !filename.startsWith(".") && (pathname.isDirectory() ||
-                            filename.endsWith(".png") ||
-                            filename.endsWith(".jpg") ||
-                            filename.endsWith(".jpeg") ||
-                            filename.endsWith(".gif"));
-                }
-            });
+            File[] contents = new File(entry.Path).listFiles(new MangaFileFilter(true));
 
             if(contents != null) {
                 for (File file : contents) {

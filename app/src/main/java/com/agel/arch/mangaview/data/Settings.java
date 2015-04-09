@@ -47,10 +47,6 @@ public class Settings {
     public int ZoomFactor;
     public int DirectoryColor;
     public int FileColor;
-    public int SwipeTimeThreshold;
-    public int SwipeShapeThreshold;
-    public int SwipeLengthThreshold;
-    public int CancelTrembleThreshold;
     public GestureDirections GestureNextPage;
     public GestureDirections GesturePrevPage;
     public GestureDirections GestureZoomIn;
@@ -110,42 +106,6 @@ public class Settings {
         }
         else
             FileColor = prefs.getInt(PrefsId_file_color, 0xFFFFFFFF);
-
-        //SwipeTimeThreshold-----------------------------------------------------------------------------------------
-        if(!prefs.contains(PrefsId_swipe_time_threshold))
-        {
-            SwipeTimeThreshold = 250;
-            needSave = true;
-        }
-        else
-            SwipeTimeThreshold = prefs.getInt(PrefsId_swipe_time_threshold, 250);
-
-        //SwipeShapeThreshold------------------------------------------------------------------------------------
-        if(!prefs.contains(PrefsId_swipe_shape_threshold))
-        {
-            SwipeShapeThreshold = 5;
-            needSave = true;
-        }
-        else
-            SwipeShapeThreshold = prefs.getInt(PrefsId_swipe_shape_threshold, 5);
-
-        //SwipeLengthThreshold------------------------------------------------------------------------------------
-        if(!prefs.contains(PrefsId_swipe_length_threshold))
-        {
-            SwipeLengthThreshold = 75;
-            needSave = true;
-        }
-        else
-            SwipeLengthThreshold = prefs.getInt(PrefsId_swipe_length_threshold, 55);
-
-        //CancelTrembleThreshold------------------------------------------------------------------------------------
-        if(!prefs.contains(PrefsId_cancel_tremble_threshold))
-        {
-            CancelTrembleThreshold = 4;
-            needSave = true;
-        }
-        else
-            CancelTrembleThreshold = prefs.getInt(PrefsId_cancel_tremble_threshold, 4);
 
         //GestureNextPage---------------------------------------------------------------------------------------------
         if(!prefs.contains(PrefsId_gestures_next_page))
@@ -273,10 +233,6 @@ public class Settings {
         prefsEdit.putInt(PrefsId_zoom_factor, ZoomFactor);
         prefsEdit.putInt(PrefsId_directory_color, DirectoryColor);
         prefsEdit.putInt(PrefsId_file_color, FileColor);
-        prefsEdit.putInt(PrefsId_swipe_time_threshold, SwipeTimeThreshold);
-        prefsEdit.putInt(PrefsId_swipe_shape_threshold, SwipeShapeThreshold);
-        prefsEdit.putInt(PrefsId_swipe_length_threshold, SwipeLengthThreshold);
-        prefsEdit.putInt(PrefsId_cancel_tremble_threshold, CancelTrembleThreshold);
         prefsEdit.putInt(PrefsId_keys_next_page, KeyNextPage);
         prefsEdit.putInt(PrefsId_keys_prev_page, KeyPrevPage);
         prefsEdit.commit();
