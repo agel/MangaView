@@ -4,12 +4,9 @@ import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.Rect;
 
-import java.util.Observable;
-
-public class ZoomStateController extends Observable {
+public class ZoomState {
 
     private ZoomControlType mState;
-	private GestureDirections mSwipeState;
 	private int mSizeX = 0;
 	private int mSizeY = 0;
 	private int mPanX = 0;
@@ -22,7 +19,7 @@ public class ZoomStateController extends Observable {
 	private Rect mZoomSrc = new Rect();
 	private Rect mZoomDst = new Rect();
 	
-	public ZoomStateController(int zoomF) {
+	public ZoomState(int zoomF) {
 		mZoomFactor = zoomF;
 	}
 
@@ -33,7 +30,6 @@ public class ZoomStateController extends Observable {
 			mZoomSrc = new Rect();
 			mZoomDst = new Rect();
 		}
-		setChanged();
 	}
 	
 	public ZoomControlType getZoomState() {
@@ -45,7 +41,6 @@ public class ZoomStateController extends Observable {
 		mZoomCenter = new PointF(touchCoord);
 		mPanX = 0;
 		mPanY = 0;
-		setChanged();
 	}
 	
 	public void setPan(int x, int y) {
@@ -54,7 +49,6 @@ public class ZoomStateController extends Observable {
 			mPanY = mPrevPanPointY - y;
 			mPrevPanPointX = x;
 			mPrevPanPointY = y;
-			setChanged();
 		}
 	}
 	
@@ -75,7 +69,6 @@ public class ZoomStateController extends Observable {
         if (sizeX != mSizeX || sizeY != mSizeY) {
             mSizeX = sizeX;
             mSizeY = sizeY;
-            setChanged();
         }
     }	
 		

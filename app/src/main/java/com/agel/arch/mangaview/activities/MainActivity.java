@@ -19,7 +19,7 @@ import com.agel.arch.mangaview.fragments.manga.BookmarksFragment;
 import com.agel.arch.mangaview.fragments.manga.FileSystemFragment;
 import com.agel.arch.mangaview.fragments.manga.HistoryFragment;
 import com.agel.arch.mangaview.fragments.manga.SettingsFragment;
-import com.agel.arch.mangaview.fragments.FsModelFragment;
+import com.agel.arch.mangaview.models.FsModelFragment;
 
 
 public class MainActivity extends ActionBarActivity
@@ -81,12 +81,10 @@ public class MainActivity extends ActionBarActivity
             rootEntry = modelFragment.getRootEntry();
             currentFsEntry = rootEntry;
 
-            modelFragment.addChangeListener(this);
             modelFragment.scan();
-        } else {
-            modelFragment.addChangeListener(this);
         }
-        setLoading(!modelFragment.isScanFinished());
+
+        modelFragment.addChangeListener(this);
     }
 
     @Override

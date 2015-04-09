@@ -11,9 +11,8 @@ import com.agel.arch.mangaview.activities.MainActivity;
 import com.agel.arch.mangaview.activities.MangaViewActivity;
 import com.agel.arch.mangaview.adapters.FileSystemAdapter;
 import com.agel.arch.mangaview.data.FileEntry;
-import com.agel.arch.mangaview.fragments.FsModelFragment;
+import com.agel.arch.mangaview.models.FsModelFragment;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package com.agel.arch.mangaview.fragments;
+package com.agel.arch.mangaview.models;
 
 import android.database.Observable;
 import android.os.Bundle;

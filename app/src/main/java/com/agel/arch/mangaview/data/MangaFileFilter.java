@@ -3,9 +3,6 @@ package com.agel.arch.mangaview.data;
 import java.io.File;
 import java.io.FileFilter;
 
-/**
- * Created by agel on 09/04/2015.
- */
 public class MangaFileFilter implements FileFilter {
     private boolean includeDirectories;
 

@@ -3,17 +3,31 @@ package com.agel.arch.mangaview.views;
 /**
  * Created by agel on 09/04/2015.
  */
+import android.database.Observable;
 import android.graphics.Point;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
 
 import com.agel.arch.mangaview.data.ZoomControlType;
-import com.agel.arch.mangaview.data.ZoomStateController;
+import com.agel.arch.mangaview.data.ZoomState;
 
-public class TouchInputListener implements OnTouchListener {
+public class TouchInputListener {
+    //Event Observer
+    public interface TouchObserver {
+        void onTouchAction(ZoomState state);
+    }
+    //Observable manager
+    private class TouchObservable extends Observable<TouchObserver> {
+        public void notifyProgress(ZoomState state) {
+            for (final TouchObserver observer : mObservers) {
+                observer.onTouchAction(state);
+            }
+        }
+    }
 
-    private ZoomStateController mState;
+    private ZoomState mState;
+    private final TouchObservable observers = new TouchObservable();
     private final int trembleThreshold = 4;
     private int mStartX;
     private int mStartY;
@@ -23,7 +37,7 @@ public class TouchInputListener implements OnTouchListener {
         super();
     }
 
-    public void setZoomState(ZoomStateController state) {
+    public void setZoomState(ZoomState state) {
         mState = state;
     }
 
@@ -55,13 +69,13 @@ public class TouchInputListener implements OnTouchListener {
             case MotionEvent.ACTION_MOVE:
                 if (mState.getZoomState() == ZoomControlType.ZOOM) {
                     mState.setSize(touchCoord.x,touchCoord.y);
-                    mState.notifyObservers();
+                    observers.notifyProgress(mState);
                 }
                 else
                 if(mState.getZoomState() == ZoomControlType.PAN )
                 {
                     mState.setPan(touchCoord.x,touchCoord.y);
-                    mState.notifyObservers();
+                    observers.notifyProgress(mState);
                 }
 
                 break;
@@ -77,4 +91,11 @@ public class TouchInputListener implements OnTouchListener {
         return true;
     }
 
+    public void addChangeListener(final TouchObserver observer) {
+        observers.registerObserver(observer);
+    }
+
+    public void removeChangeListener(final TouchObserver observer) {
+        observers.unregisterObserver(observer);
+    }
 }

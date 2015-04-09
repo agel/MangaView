@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.Environment;
+import android.util.SparseIntArray;
 import android.view.KeyEvent;
 import android.widget.Toast;
 
@@ -16,10 +17,6 @@ public class Settings {
     public static final String PrefsId_zoom_factor = "prefs_ZoomFactor";
     public static final String PrefsId_directory_color = "prefs_DirectoryColor";
     public static final String PrefsId_file_color = "prefs_FileColor";
-    public static final String PrefsId_swipe_time_threshold = "prefs_SwipeTimeThreshold";
-    public static final String PrefsId_swipe_shape_threshold = "prefs_SwipeShapeThreshold";
-    public static final String PrefsId_swipe_length_threshold = "prefs_SwipeLengthThreshold";
-    public static final String PrefsId_cancel_tremble_threshold = "prefs_CancelTrembleThreshold";
 
     public static final String PrefsId_gestures_next_page = "prefs_GestureNexPage";
     public static final String PrefsId_gestures_prev_page = "prefs_GesturePrevPage";
@@ -47,17 +44,17 @@ public class Settings {
     public int ZoomFactor;
     public int DirectoryColor;
     public int FileColor;
-    public GestureDirections GestureNextPage;
-    public GestureDirections GesturePrevPage;
-    public GestureDirections GestureZoomIn;
-    public GestureDirections GestureZoomOut;
+//    public GestureDirections GestureNextPage;
+//    public GestureDirections GesturePrevPage;
+//    public GestureDirections GestureZoomIn;
+//    public GestureDirections GestureZoomOut;
     public int KeyNextPage;
     public int KeyPrevPage;
     public int KeyZoomIn;
     public int KeyZoomOut;
 
-    public EnumMap<GestureDirections,GestureActions> mGestureSetting;
-    public Hashtable<Integer,GestureActions> mKeySetting;
+//    public EnumMap<GestureDirections,GestureActions> mGestureSetting;
+    public SparseIntArray mKeySetting;
 
     public void loadSettings(SharedPreferences prefs, Resources res) {
         Boolean needSave = false;
@@ -107,41 +104,41 @@ public class Settings {
         else
             FileColor = prefs.getInt(PrefsId_file_color, 0xFFFFFFFF);
 
-        //GestureNextPage---------------------------------------------------------------------------------------------
-        if(!prefs.contains(PrefsId_gestures_next_page))
-        {
-            GestureNextPage = GestureDirections.RIGHT;
-            needSave = true;
-        }
-        else
-            GestureNextPage = GestureDirections.valueOf(GestureDirections.class, prefs.getString(PrefsId_gestures_next_page, GestureDirections.RIGHT.name()));
-
-        //GesturePrevPage-------------------------------------------------------------------------------------
-        if(!prefs.contains(PrefsId_gestures_prev_page))
-        {
-            GesturePrevPage = GestureDirections.LEFT;
-            needSave = true;
-        }
-        else
-            GesturePrevPage = GestureDirections.valueOf(GestureDirections.class, prefs.getString(PrefsId_gestures_prev_page, GestureDirections.LEFT.name()));
-
-        //GestureZoomIn---------------------------------------------------------------------------------------------
-        if(!prefs.contains(PrefsId_gestures_next_page))
-        {
-            GestureZoomIn = GestureDirections.NONE;
-            needSave = true;
-        }
-        else
-            GestureZoomIn = GestureDirections.valueOf(GestureDirections.class, prefs.getString(PrefsId_gestures_zoom_in, GestureDirections.NONE.name()));
-
-        //GestureZoomOut-------------------------------------------------------------------------------------
-        if(!prefs.contains(PrefsId_gestures_prev_page))
-        {
-            GestureZoomOut = GestureDirections.NONE;
-            needSave = true;
-        }
-        else
-            GestureZoomOut = GestureDirections.valueOf(GestureDirections.class, prefs.getString(PrefsId_gestures_zoom_out, GestureDirections.NONE.name()));
+//        //GestureNextPage---------------------------------------------------------------------------------------------
+//        if(!prefs.contains(PrefsId_gestures_next_page))
+//        {
+//            GestureNextPage = GestureDirections.RIGHT;
+//            needSave = true;
+//        }
+//        else
+//            GestureNextPage = GestureDirections.valueOf(GestureDirections.class, prefs.getString(PrefsId_gestures_next_page, GestureDirections.RIGHT.name()));
+//
+//        //GesturePrevPage-------------------------------------------------------------------------------------
+//        if(!prefs.contains(PrefsId_gestures_prev_page))
+//        {
+//            GesturePrevPage = GestureDirections.LEFT;
+//            needSave = true;
+//        }
+//        else
+//            GesturePrevPage = GestureDirections.valueOf(GestureDirections.class, prefs.getString(PrefsId_gestures_prev_page, GestureDirections.LEFT.name()));
+//
+//        //GestureZoomIn---------------------------------------------------------------------------------------------
+//        if(!prefs.contains(PrefsId_gestures_next_page))
+//        {
+//            GestureZoomIn = GestureDirections.NONE;
+//            needSave = true;
+//        }
+//        else
+//            GestureZoomIn = GestureDirections.valueOf(GestureDirections.class, prefs.getString(PrefsId_gestures_zoom_in, GestureDirections.NONE.name()));
+//
+//        //GestureZoomOut-------------------------------------------------------------------------------------
+//        if(!prefs.contains(PrefsId_gestures_prev_page))
+//        {
+//            GestureZoomOut = GestureDirections.NONE;
+//            needSave = true;
+//        }
+//        else
+//            GestureZoomOut = GestureDirections.valueOf(GestureDirections.class, prefs.getString(PrefsId_gestures_zoom_out, GestureDirections.NONE.name()));
 
         //KeyNextPage----------------------------------------------------------------------------------------------
         if(!prefs.contains(PrefsId_keys_next_page))
@@ -187,37 +184,37 @@ public class Settings {
 
     private void setupBindings(){
         Settings settings = Settings.getInstance();
-        //Gestures
-        mGestureSetting = new EnumMap<>(GestureDirections.class);
-
-        //next page
-        if(settings.GestureNextPage != GestureDirections.NONE)
-            mGestureSetting.put(settings.GestureNextPage , GestureActions.NEXT);
-        //prev page
-        if(settings.GesturePrevPage != GestureDirections.NONE)
-            mGestureSetting.put(settings.GesturePrevPage, GestureActions.BACK);
-        //zoom in
-        if(settings.GestureZoomIn != GestureDirections.NONE)
-            mGestureSetting.put(settings.GestureZoomIn, GestureActions.ZOOM_IN);
-        //zoom out
-        if(settings.GestureZoomOut != GestureDirections.NONE)
-            mGestureSetting.put(settings.GestureZoomOut, GestureActions.ZOOM_OUT);
-
+//        //Gestures
+//        mGestureSetting = new EnumMap<>(GestureDirections.class);
+//
+//        //next page
+//        if(settings.GestureNextPage != GestureDirections.NONE)
+//            mGestureSetting.put(settings.GestureNextPage , GestureActions.NEXT);
+//        //prev page
+//        if(settings.GesturePrevPage != GestureDirections.NONE)
+//            mGestureSetting.put(settings.GesturePrevPage, GestureActions.BACK);
+//        //zoom in
+//        if(settings.GestureZoomIn != GestureDirections.NONE)
+//            mGestureSetting.put(settings.GestureZoomIn, GestureActions.ZOOM_IN);
+//        //zoom out
+//        if(settings.GestureZoomOut != GestureDirections.NONE)
+//            mGestureSetting.put(settings.GestureZoomOut, GestureActions.ZOOM_OUT);
+//
         //Keys
-        mKeySetting = new Hashtable<>();
+        mKeySetting = new SparseIntArray();
 
         //next page
         if(settings.KeyNextPage != KeyEvent.KEYCODE_UNKNOWN)
-            mKeySetting.put(settings.KeyNextPage, GestureActions.NEXT);
+            mKeySetting.put(settings.KeyNextPage, Gestures.ACTION_NEXT);
         //prev page
         if(settings.KeyPrevPage != KeyEvent.KEYCODE_UNKNOWN)
-            mKeySetting.put(settings.KeyPrevPage, GestureActions.BACK);
+            mKeySetting.put(settings.KeyPrevPage, Gestures.ACTION_BACK);
         //zoom id
         if(settings.KeyZoomIn != KeyEvent.KEYCODE_UNKNOWN)
-            mKeySetting.put(settings.KeyZoomIn, GestureActions.ZOOM_IN);
+            mKeySetting.put(settings.KeyZoomIn, Gestures.ACTION_ZOOM_IN);
         //zoom out
         if(settings.KeyZoomOut != KeyEvent.KEYCODE_UNKNOWN)
-            mKeySetting.put(settings.KeyZoomOut, GestureActions.ZOOM_OUT);
+            mKeySetting.put(settings.KeyZoomOut, Gestures.ACTION_ZOOM_OUT);
     }
 
     public Boolean validateSettings() {
@@ -238,10 +235,6 @@ public class Settings {
         prefsEdit.commit();
     }
 
-    static public boolean hasStorageAccessible() {
-        return Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)
-                || Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED_READ_ONLY);
-    }
     static public void makeToast(Context context, String message) {
         Toast.makeText(context, message, Toast.LENGTH_LONG).show();
     }

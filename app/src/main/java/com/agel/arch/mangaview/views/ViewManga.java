@@ -11,7 +11,7 @@ import android.util.AttributeSet;
 import android.widget.ImageView;
 
 import com.agel.arch.mangaview.data.ZoomControlType;
-import com.agel.arch.mangaview.data.ZoomStateController;
+import com.agel.arch.mangaview.data.ZoomState;
 
 public class ViewManga extends ImageView {
 
@@ -24,7 +24,7 @@ public class ViewManga extends ImageView {
 	}
 
 	public Bitmap mBitmap;
-	private ZoomStateController mState;
+	private ZoomState mState;
 	
 	private boolean mShowPageNumer = false;
 	private Point mCurrentPage = new Point(0,0);
@@ -63,8 +63,12 @@ public class ViewManga extends ImageView {
 			mState.setZoomState(ZoomControlType.NONE);
 		invalidate();
 	}
-	
-	@Override
+
+    public boolean hasImage() {
+        return mBitmap != null;
+    }
+
+    @Override
 	protected void onDraw(Canvas canvas) {
 		super.onDraw(canvas);
 		//TODO implement drawing to bitmap
@@ -80,7 +84,7 @@ public class ViewManga extends ImageView {
 			canvas.drawText(mCurrentPage.x + "/" + mCurrentPage.y, 0, 50, mTextPaint);
 	}
 	
-	public void setZoomState(ZoomStateController state) {
+	public void setZoomState(ZoomState state) {
        mState = state;
     }
 	
