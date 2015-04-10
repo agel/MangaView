@@ -1,27 +1,23 @@
 package com.agel.arch.mangaview.views;
 
-/**
- * Created by agel on 09/04/2015.
- */
 import android.database.Observable;
 import android.graphics.Point;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
 
-import com.agel.arch.mangaview.data.ZoomControlType;
 import com.agel.arch.mangaview.data.ZoomState;
 
-public class TouchInputListener {
+public class TouchInputListener implements OnTouchListener{
     //Event Observer
     public interface TouchObserver {
-        void onTouchAction(ZoomState state);
+        void onTouchAction();
     }
     //Observable manager
     private class TouchObservable extends Observable<TouchObserver> {
-        public void notifyProgress(ZoomState state) {
+        public void onTouchAction() {
             for (final TouchObserver observer : mObservers) {
-                observer.onTouchAction(state);
+                observer.onTouchAction();
             }
         }
     }
@@ -41,6 +37,7 @@ public class TouchInputListener {
         mState = state;
     }
 
+    @Override
     public boolean onTouch(View v, MotionEvent event) {
 
         final int action = event.getAction();
@@ -51,15 +48,15 @@ public class TouchInputListener {
                 mStartX = touchCoord.x;
                 mStartY = touchCoord.y;
 
-                if(mState.getZoomState() == ZoomControlType.NONE)
-                    mState.setZoomState(ZoomControlType.ZOOM);
-                if(mState.getZoomState() == ZoomControlType.ZOOM)
+                if(mState.getZoomState() == ZoomState.ZOOM_STATE_NONE)
+                    mState.setZoomState(ZoomState.ZOOM_STATE_ZOOM);
+                if(mState.getZoomState() == ZoomState.ZOOM_STATE_ZOOM)
                     mState.setCenter(touchCoord);
-                if(mState.getZoomState() == ZoomControlType.PAN)
+                if(mState.getZoomState() == ZoomState.ZOOM_STATE_PAN)
                 {
                     if(!mState.getRectDst().contains(touchCoord.x, touchCoord.y))
                     {
-                        mState.setZoomState(ZoomControlType.ZOOM);
+                        mState.setZoomState(ZoomState.ZOOM_STATE_ZOOM);
                         mState.setCenter(touchCoord);
                     }
                     else
@@ -67,23 +64,23 @@ public class TouchInputListener {
                 }
                 break;
             case MotionEvent.ACTION_MOVE:
-                if (mState.getZoomState() == ZoomControlType.ZOOM) {
+                if (mState.getZoomState() == ZoomState.ZOOM_STATE_ZOOM) {
                     mState.setSize(touchCoord.x,touchCoord.y);
-                    observers.notifyProgress(mState);
+                    observers.onTouchAction();
                 }
                 else
-                if(mState.getZoomState() == ZoomControlType.PAN )
+                if(mState.getZoomState() == ZoomState.ZOOM_STATE_PAN )
                 {
                     mState.setPan(touchCoord.x,touchCoord.y);
-                    observers.notifyProgress(mState);
+                    observers.onTouchAction();
                 }
 
                 break;
             case MotionEvent.ACTION_UP :
 
-                if(mState.getZoomState() == ZoomControlType.ZOOM)
+                if(mState.getZoomState() == ZoomState.ZOOM_STATE_ZOOM)
                 {
-                    mState.setZoomState(ZoomControlType.PAN);
+                    mState.setZoomState(ZoomState.ZOOM_STATE_PAN);
                 }
                 break;
         }

@@ -3,64 +3,83 @@ package com.agel.arch.mangaview.views;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Point;
+import android.graphics.Rect;
+import android.graphics.RectF;
+import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.widget.ImageView;
 
-import com.agel.arch.mangaview.data.ZoomControlType;
+import com.agel.arch.mangaview.data.Settings;
 import com.agel.arch.mangaview.data.ZoomState;
 
-public class ViewManga extends ImageView {
+public class ViewManga extends ImageView implements TouchInputListener.TouchObserver {
 
-	public ViewManga(Context context, AttributeSet attrs, int defStyle) {
-		super(context, attrs, defStyle);		
-	}
+    private final ZoomState zoomState = new ZoomState(Settings.getInstance().ZoomFactor);
+    private final TouchInputListener zoomListener = new TouchInputListener();
 
-	public ViewManga(Context context, AttributeSet attrs) {
-		super(context, attrs);		
-	}
-
+    private final Paint mBitmapPaint = new Paint(Paint.FILTER_BITMAP_FLAG);
+    private final Paint mDebugPaint = new Paint();
 	public Bitmap mBitmap;
-	private ZoomState mState;
-	
-	private boolean mShowPageNumer = false;
-	private Point mCurrentPage = new Point(0,0);
-	
-	public void setCurrentPage(Point currentPage) {
-		currentPage.x += 1;
-		this.mCurrentPage = currentPage;
-	}
 
-	public void setShowPageNumer(boolean showPageNumer) {
-		this.mShowPageNumer = showPageNumer;
-	}
+    private Rect viewDimensions = new Rect();
+    private Rect imageDimensions = new Rect();
+    private Rect dirtyRect = new Rect();
+    private Matrix matrix = new Matrix();
+    private float mtxValues[] = {0,0,0,0,0,0,0,0,0};
 
-	private final Paint mBitmapPaint = new Paint(Paint.FILTER_BITMAP_FLAG);
-	private final Paint mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-	private Matrix matrix;
-	private float[] mtxValues = {0,0,0,0,0,0,0,0,0};
-		
-	public ViewManga(Context context) {
-		super(context);
-		
-		mTextPaint.setTextSize(40);	
-		mTextPaint.setColor(Color.BLUE);
-		mTextPaint.setAlpha(128);
-	}
+    public ViewManga(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
+    }
 
-	public void setImage(Bitmap bmp) {
-		
+    public ViewManga(Context context, AttributeSet attrs) {
+        super(context, attrs);
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+
+        zoomListener.setZoomState(zoomState);
+        zoomListener.addChangeListener(this);
+
+        setOnTouchListener(zoomListener);
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+
+        zoomListener.removeChangeListener(this);
+        setOnTouchListener(null);
+    }
+
+    public void initViewDimensions() {
+        getWindowVisibleDisplayFrame(viewDimensions);
+    }
+
+    public void setImage(Bitmap bmp) {
+
+        //Calculate image displaying parameters
+        imageDimensions.left = 0;
+        imageDimensions.top = 0;
+        imageDimensions.right = bmp.getWidth();
+        imageDimensions.bottom = bmp.getHeight();
+
+        matrix.setRectToRect(new RectF(imageDimensions), new RectF(viewDimensions), Matrix.ScaleToFit.CENTER);
+        matrix.getValues(mtxValues);
+
+        //Set bitmap
 		if(mBitmap != null)
     		mBitmap.recycle();
 		mBitmap = null;
-		System.gc();
-		
-		mBitmap = bmp;		
-		if(mState != null)
-			mState.setZoomState(ZoomControlType.NONE);
+
+		mBitmap = bmp;
+
+        //Reset zoom
+		zoomState.setZoomState(ZoomState.ZOOM_STATE_NONE);
+        //Redraw
 		invalidate();
 	}
 
@@ -69,27 +88,53 @@ public class ViewManga extends ImageView {
     }
 
     @Override
-	protected void onDraw(Canvas canvas) {
-		super.onDraw(canvas);
-		//TODO implement drawing to bitmap
+	protected void onDraw(@NonNull Canvas canvas) {
 		if(mBitmap != null)
 		{
 			canvas.drawBitmap(mBitmap,matrix,mBitmapPaint);
-			
-			if(mState != null)
-				if(mState.getZoomState() != ZoomControlType.NONE && mtxValues[0] < 1)								
-					canvas.drawBitmap(mBitmap,mState.getRectSrc(),mState.getRectDst(),mBitmapPaint);			
-		}		
-		if(mShowPageNumer)			
-			canvas.drawText(mCurrentPage.x + "/" + mCurrentPage.y, 0, 50, mTextPaint);
+
+            if(zoomState.getZoomState() != ZoomState.ZOOM_STATE_NONE) {
+                mDebugPaint.setColor(0xFFFF0000);
+                canvas.drawRect(zoomState.getRectDst(), mDebugPaint);
+            }
+		}
 	}
-	
-	public void setZoomState(ZoomState state) {
-       mState = state;
+
+    @Override
+    public void onTouchAction() {
+        redraw();
     }
-	
-	public void setMatrix(Matrix mtx) {
-		matrix = mtx;
-		matrix.getValues(mtxValues);
-	}
+
+    public void redraw() {
+
+        //Calculate zoom/pan and area needed to be redrawn
+        dirtyRect.set(zoomState.getRectDst());
+
+        if(zoomState.getZoomState() != ZoomState.ZOOM_STATE_NONE)
+        {
+            zoomState.calcRectangles(mtxValues,imageDimensions,viewDimensions);
+        }
+
+        dirtyRect.union(zoomState.getRectDst());
+
+        boolean dirty = !dirtyRect.equals(new Rect(0, 0, 0, 0));
+
+        if(dirty)
+            invalidate(dirtyRect);
+        else
+            invalidate();
+    }
+
+    public void onConfigurationChanged() {
+        getWindowVisibleDisplayFrame(viewDimensions);
+
+        matrix.setRectToRect(new RectF(imageDimensions), new RectF(viewDimensions), Matrix.ScaleToFit.CENTER);
+        matrix.getValues(mtxValues);
+
+        invalidate();
+    }
+
+    public ZoomState getZoomState() {
+        return zoomState;
+    }
 }

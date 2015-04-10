@@ -8,9 +8,6 @@ import android.util.SparseIntArray;
 import android.view.KeyEvent;
 import android.widget.Toast;
 
-import java.util.EnumMap;
-import java.util.Hashtable;
-
 public class Settings {
     public static final String PrefsId_lib_root = "prefs_LibraryRoot";
     public static final String PrefsId_show_with_images = "prefs_ShowWithImages";
@@ -44,10 +41,6 @@ public class Settings {
     public int ZoomFactor;
     public int DirectoryColor;
     public int FileColor;
-//    public GestureDirections GestureNextPage;
-//    public GestureDirections GesturePrevPage;
-//    public GestureDirections GestureZoomIn;
-//    public GestureDirections GestureZoomOut;
     public int KeyNextPage;
     public int KeyPrevPage;
     public int KeyZoomIn;
@@ -104,42 +97,6 @@ public class Settings {
         else
             FileColor = prefs.getInt(PrefsId_file_color, 0xFFFFFFFF);
 
-//        //GestureNextPage---------------------------------------------------------------------------------------------
-//        if(!prefs.contains(PrefsId_gestures_next_page))
-//        {
-//            GestureNextPage = GestureDirections.RIGHT;
-//            needSave = true;
-//        }
-//        else
-//            GestureNextPage = GestureDirections.valueOf(GestureDirections.class, prefs.getString(PrefsId_gestures_next_page, GestureDirections.RIGHT.name()));
-//
-//        //GesturePrevPage-------------------------------------------------------------------------------------
-//        if(!prefs.contains(PrefsId_gestures_prev_page))
-//        {
-//            GesturePrevPage = GestureDirections.LEFT;
-//            needSave = true;
-//        }
-//        else
-//            GesturePrevPage = GestureDirections.valueOf(GestureDirections.class, prefs.getString(PrefsId_gestures_prev_page, GestureDirections.LEFT.name()));
-//
-//        //GestureZoomIn---------------------------------------------------------------------------------------------
-//        if(!prefs.contains(PrefsId_gestures_next_page))
-//        {
-//            GestureZoomIn = GestureDirections.NONE;
-//            needSave = true;
-//        }
-//        else
-//            GestureZoomIn = GestureDirections.valueOf(GestureDirections.class, prefs.getString(PrefsId_gestures_zoom_in, GestureDirections.NONE.name()));
-//
-//        //GestureZoomOut-------------------------------------------------------------------------------------
-//        if(!prefs.contains(PrefsId_gestures_prev_page))
-//        {
-//            GestureZoomOut = GestureDirections.NONE;
-//            needSave = true;
-//        }
-//        else
-//            GestureZoomOut = GestureDirections.valueOf(GestureDirections.class, prefs.getString(PrefsId_gestures_zoom_out, GestureDirections.NONE.name()));
-
         //KeyNextPage----------------------------------------------------------------------------------------------
         if(!prefs.contains(PrefsId_keys_next_page))
         {
@@ -184,22 +141,7 @@ public class Settings {
 
     private void setupBindings(){
         Settings settings = Settings.getInstance();
-//        //Gestures
-//        mGestureSetting = new EnumMap<>(GestureDirections.class);
-//
-//        //next page
-//        if(settings.GestureNextPage != GestureDirections.NONE)
-//            mGestureSetting.put(settings.GestureNextPage , GestureActions.NEXT);
-//        //prev page
-//        if(settings.GesturePrevPage != GestureDirections.NONE)
-//            mGestureSetting.put(settings.GesturePrevPage, GestureActions.BACK);
-//        //zoom in
-//        if(settings.GestureZoomIn != GestureDirections.NONE)
-//            mGestureSetting.put(settings.GestureZoomIn, GestureActions.ZOOM_IN);
-//        //zoom out
-//        if(settings.GestureZoomOut != GestureDirections.NONE)
-//            mGestureSetting.put(settings.GestureZoomOut, GestureActions.ZOOM_OUT);
-//
+
         //Keys
         mKeySetting = new SparseIntArray();
 

@@ -3,10 +3,15 @@ package com.agel.arch.mangaview.data;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.Rect;
+import android.util.Log;
 
 public class ZoomState {
+    public static final String TAG = "ZoomState";
+    public final static int ZOOM_STATE_NONE = 0;
+    public final static int ZOOM_STATE_ZOOM = 1;
+    public final static int ZOOM_STATE_PAN = 2;
 
-    private ZoomControlType mState;
+    private int mState = ZoomState.ZOOM_STATE_NONE;
 	private int mSizeX = 0;
 	private int mSizeY = 0;
 	private int mPanX = 0;
@@ -23,16 +28,19 @@ public class ZoomState {
 		mZoomFactor = zoomF;
 	}
 
-	public void setZoomState(ZoomControlType state) {
-		mState = state;
-		if(state == ZoomControlType.NONE)
-		{
-			mZoomSrc = new Rect();
-			mZoomDst = new Rect();
-		}
-	}
+	public void setZoomState(int state) {
+        if (mState == state) return;
+
+        mState = state;
+        if (state == ZOOM_STATE_NONE) {
+            mZoomSrc = new Rect();
+            mZoomDst = new Rect();
+        }
+
+        Log.d(TAG, "Zoom state changed: " + Integer.toString(state));
+    }
 	
-	public ZoomControlType getZoomState() {
+	public int getZoomState() {
 		return mState;
 	}
 	
@@ -74,7 +82,7 @@ public class ZoomState {
 		
 	public void calcRectangles(float mtxValues[], Rect img, Rect scr) {
 				
-		if(mState == ZoomControlType.ZOOM)
+		if(mState == ZOOM_STATE_ZOOM)
 		{		
 			mZoomDst.left = (mDispCenter.x - Math.abs(mDispCenter.x - mSizeX));
 			mZoomDst.top = (mDispCenter.y - Math.abs(mDispCenter.y - mSizeY));

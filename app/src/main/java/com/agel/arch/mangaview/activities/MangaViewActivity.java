@@ -3,9 +3,7 @@ package com.agel.arch.mangaview.activities;
 import android.app.Activity;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
-import android.graphics.Matrix;
 import android.graphics.Rect;
-import android.graphics.RectF;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -15,37 +13,27 @@ import android.view.Window;
 import android.view.animation.Animation;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.RotateAnimation;
-import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
 import com.agel.arch.mangaview.R;
 import com.agel.arch.mangaview.data.Gestures;
 import com.agel.arch.mangaview.data.Settings;
-import com.agel.arch.mangaview.data.ZoomControlType;
-import com.agel.arch.mangaview.data.ZoomState;
 import com.agel.arch.mangaview.models.FsModelFragment;
 import com.agel.arch.mangaview.models.ImageModelFragment;
-import com.agel.arch.mangaview.views.TouchInputListener;
 import com.agel.arch.mangaview.views.ViewManga;
 
-public class MangaViewActivity extends Activity implements ImageModelFragment.ImageLoadObserver, TouchInputListener.TouchObserver {
+public class MangaViewActivity extends Activity implements ImageModelFragment.ImageLoadObserver {
     private static final String TAG = "MangaViewActivity";
     public static final String ImagePath = "Path";
 
     //Members
     private final RotateAnimation animationForward;
     private final RotateAnimation animationBackward;
-    private final ZoomState zoomState;
-    private final TouchInputListener zoomListener;
 
     private ImageModelFragment modelFragment;
     private RelativeLayout loadingLayout;
     private ViewManga mangaView;
-    private Rect viewDimensions = new Rect();
-    private Rect imageDimensions = new Rect();
-    private Rect dirtyRect = new Rect();
-    private Matrix mtx = new Matrix();
-    private float mtxValues[] = {0,0,0,0,0,0,0,0,0};
+
     private boolean exitPlanned;
 
 
@@ -62,12 +50,6 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
         animationBackward.setInterpolator(new LinearInterpolator());
         animationBackward.setRepeatCount(Animation.INFINITE);
         animationBackward.setDuration(1000);
-
-        Settings settings = Settings.getInstance();
-        final int zoomF = settings.ZoomFactor;
-        zoomState = new ZoomState(zoomF);
-        zoomListener = new TouchInputListener();
-        zoomListener.setZoomState(zoomState);
     }
 
     @Override
@@ -93,9 +75,6 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
         loadingLayout = (RelativeLayout)findViewById(R.id.layout_loading);
 
         mangaView = (ViewManga)findViewById(R.id.view_manga);
-        mangaView.setScaleType(ImageView.ScaleType.CENTER);
-        mangaView.setZoomState(zoomState);
-        zoomListener.addChangeListener(this);
 
         //Get model
         modelFragment = (ImageModelFragment) getFragmentManager().findFragmentByTag(ImageModelFragment.TAG);
@@ -128,7 +107,7 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
     protected void onStart() {
         super.onStart();
 
-        mangaView.getWindowVisibleDisplayFrame(viewDimensions);
+        mangaView.initViewDimensions();
 
         if(!mangaView.hasImage()) {
             modelFragment.loadCurrent();
@@ -140,7 +119,6 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
         if(Settings.getInstance().mKeySetting.get(keyCode) > 0)
         {
             exitPlanned = this.processAction(Settings.getInstance().mKeySetting.get(keyCode));
-            redrawMangaView();
             return true;
         }
         else
@@ -164,18 +142,8 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-
-        mangaView.getWindowVisibleDisplayFrame(viewDimensions);
-
-        mtx.setRectToRect(new RectF(imageDimensions), new RectF(viewDimensions), Matrix.ScaleToFit.CENTER);
-        mtx.getValues(mtxValues);
-
-        if(loadingLayout.getVisibility() == View.INVISIBLE)
-        {
-            mangaView.setMatrix(mtx);
-            zoomState.setZoomState(ZoomControlType.NONE);
-            mangaView.invalidate();
-        }
+        //Tell mangaView to redraw itself using new dimensions
+        mangaView.onConfigurationChanged();
     }
 
     private boolean processAction(int action) {
@@ -188,24 +156,26 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
             case Gestures.ACTION_BACK:
                 return modelFragment.loadPrevious();
             case Gestures.ACTION_ZOOM_IN:
-                zoomF = zoomState.getZoomFactor();
+                zoomF = mangaView.getZoomState().getZoomFactor();
                 if(zoomF <= 140)
                     zoomF += 10;
                 else
                     zoomF = 150;
-                zoomState.setZoomFactor(zoomF);
+                mangaView.getZoomState().setZoomFactor(zoomF);
                 settings.ZoomFactor = zoomF;
                 settings.saveSettings(PreferenceManager.getDefaultSharedPreferences(this), getResources());
+                mangaView.redraw();
                 break;
             case Gestures.ACTION_ZOOM_OUT:
-                zoomF = zoomState.getZoomFactor();
+                zoomF = mangaView.getZoomState().getZoomFactor();
                 if(zoomF >= 60)
                     zoomF -= 10;
                 else
                     zoomF = 50;
-                zoomState.setZoomFactor(zoomF);
+                mangaView.getZoomState().setZoomFactor(zoomF);
                 settings.ZoomFactor = zoomF;
                 settings.saveSettings(PreferenceManager.getDefaultSharedPreferences(this), getResources());
+                mangaView.redraw();
                 break;
             default:
                 break;
@@ -213,35 +183,8 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
         return false;
     }
 
-    private boolean calcRectangles() {
-
-        //Calculate zoom/pan and area needed to be redrawn
-        dirtyRect.set(zoomState.getRectDst());
-
-        if(zoomState.getZoomState() != ZoomControlType.NONE)
-        {
-            zoomState.calcRectangles(mtxValues,imageDimensions,viewDimensions);
-        }
-
-        dirtyRect.union(zoomState.getRectDst());
-
-        return !dirtyRect.equals(new Rect(0, 0, 0, 0));
-    }
-
-
     @Override
     public void onImageReady(Bitmap bitmap) {
-        //Calculate image displaying parameters
-        imageDimensions.left = 0;
-        imageDimensions.top = 0;
-        imageDimensions.right = bitmap.getWidth();
-        imageDimensions.bottom = bitmap.getHeight();
-
-        mtx.setRectToRect(new RectF(imageDimensions), new RectF(viewDimensions), Matrix.ScaleToFit.CENTER);
-        mtx.getValues(mtxValues);
-
-        mangaView.setZoomState(zoomState);
-        mangaView.setMatrix(mtx);
         mangaView.setImage(bitmap);
     }
 
@@ -253,17 +196,5 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
     @Override
     public void onLoadingChanged(boolean loading, String currentPath) {
 
-    }
-
-    @Override
-    public void onTouchAction(ZoomState state) {
-        redrawMangaView();
-    }
-
-    private void redrawMangaView() {
-        if(this.calcRectangles())
-            mangaView.invalidate(dirtyRect);
-        else
-            mangaView.invalidate();
     }
 }
