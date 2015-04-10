@@ -144,7 +144,7 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
             return true;
         }
         else
-            return false;
+            return super.onKeyDown(keyCode, event);
     }
 
     @Override
@@ -158,9 +158,7 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
             return true;
         }
         else
-        {
-            return false;
-        }
+            return super.onKeyUp(keyCode, event);
     }
 
     @Override
