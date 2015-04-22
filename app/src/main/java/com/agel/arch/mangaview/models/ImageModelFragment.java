@@ -8,6 +8,7 @@ import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import com.agel.arch.mangaview.data.MangaFileFilter;
 import com.agel.arch.mangaview.data.Settings;
@@ -32,17 +33,26 @@ public class ImageModelFragment extends Fragment {
 
     //Observable manager
     private class ImageLoadObservable extends Observable<ImageLoadObserver> {
-        public void notifyImageReady(Bitmap bitmap) {
+        public void notifyImageReady(final Bitmap bitmap) {
             for (final ImageLoadObserver observer : mObservers) {
-                observer.onImageReady(bitmap);
+                uiHandler.post(new Runnable() {
+                    public void run() {
+                        observer.onImageReady(bitmap);
+                    }
+                });
             }
         }
-        public void notifyRectangleChanged(Rect rectangle, Bitmap bitmap) {
+        public void notifyRectangleChanged(final Rect rectangle, final Bitmap bitmap) {
             for (final ImageLoadObserver observer : mObservers) {
-                observer.onRectangleReady(rectangle, bitmap);
+                uiHandler.post(new Runnable() {
+                    public void run() {
+                        observer.onRectangleReady(rectangle, bitmap);
+                    }
+                });
+
             }
         }
-        public void notifyLoadingChanged(boolean loading, String currentPath) {
+        public void notifyLoadingChanged(final boolean loading, final String currentPath) {
             for (final ImageLoadObserver observer : mObservers) {
                 observer.onLoadingChanged(loading, currentPath);
             }
@@ -50,10 +60,9 @@ public class ImageModelFragment extends Fragment {
     }
     //Thread pool
     public static class ImagePoolExecutor extends ThreadPoolExecutor {
-
         //Members
         public ImagePoolExecutor() {
-            super(0, 1, 10, TimeUnit.MINUTES, new ArrayBlockingQueue<Runnable>(1), new ThreadPoolExecutor.DiscardOldestPolicy());
+            super(0, 1, 30, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(1), new ThreadPoolExecutor.DiscardOldestPolicy());
         }
     }
 
@@ -81,7 +90,6 @@ public class ImageModelFragment extends Fragment {
         }
 
         return currentIndex >= 0 && directoryFiles.length > 0;
-
     }
 
     public void loadCurrent() {
@@ -115,44 +123,44 @@ public class ImageModelFragment extends Fragment {
     }
 
     private void loadImage(final int idx) {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
+        observers.notifyLoadingChanged(true, directoryFiles[idx].getPath());
+        synchronized (this) {
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    final File file = directoryFiles[idx];
+                    Bitmap bitmap = null;
+                    //reduce image on load
+                    try {
 
-                final Bitmap bitmap;
+                        //Decode image size
+                        BitmapFactory.Options decodeOptions = new BitmapFactory.Options();
+                        decodeOptions.inJustDecodeBounds = true;
 
-                //reduce image on load
-                try {
+                        BitmapFactory.decodeStream(new FileInputStream(file), null, decodeOptions);
 
-                    //Decode image size
-                    BitmapFactory.Options decodeOptions = new BitmapFactory.Options();
-                    decodeOptions.inJustDecodeBounds = true;
+//                    //Free memory for new image
+//                    System.gc();
 
-                    BitmapFactory.decodeStream(new FileInputStream(directoryFiles[idx]), null, decodeOptions);
-
-                    //Free memory for new image
-                    System.gc();
-
-                    //Decode with inSampleSize
-                    if(decodeOptions.outHeight * decodeOptions.outWidth * 4 > Settings.IMAGE_MAX_SIZE) {
-                        decodeOptions.inSampleSize = (int) Math.round((Math.sqrt(decodeOptions.outHeight * decodeOptions.outWidth * 4) / Math.sqrt(Settings.IMAGE_MAX_SIZE)) + 0.5);
-                    }
-                    decodeOptions.inJustDecodeBounds = false;
-
-                    bitmap = BitmapFactory.decodeStream(new FileInputStream(directoryFiles[idx]), null , decodeOptions);
-
-                    uiHandler.post(new Runnable() {
-                        public void run() {
-                            observers.notifyImageReady(bitmap);
+                        //Decode with inSampleSize
+                        if (decodeOptions.outHeight * decodeOptions.outWidth * 4 > Settings.IMAGE_MAX_SIZE) {
+                            decodeOptions.inSampleSize = (int) Math.round((Math.sqrt(decodeOptions.outHeight * decodeOptions.outWidth * 4) / Math.sqrt(Settings.IMAGE_MAX_SIZE)) + 0.5);
                         }
-                    });
+                        decodeOptions.inJustDecodeBounds = false;
 
+                        bitmap = BitmapFactory.decodeStream(new FileInputStream(file), null, decodeOptions);
+                    } catch (OutOfMemoryError | FileNotFoundException e) {
+                        //TODO handle out of memory
+                    }
+
+                    observers.notifyLoadingChanged(false, null);
+
+                    if(bitmap != null) {
+                        observers.notifyImageReady(bitmap);
+                    }
                 }
-                catch (OutOfMemoryError | FileNotFoundException e) {
-                   //TODO handle out of memory
-                }
-            }
-        });
+            });
+        }
     }
 
     @Override

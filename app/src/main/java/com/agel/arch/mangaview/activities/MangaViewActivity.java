@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -13,7 +14,9 @@ import android.view.Window;
 import android.view.animation.Animation;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.RotateAnimation;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import com.agel.arch.mangaview.R;
 import com.agel.arch.mangaview.data.Gestures;
@@ -32,14 +35,16 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
 
     private ImageModelFragment modelFragment;
     private RelativeLayout loadingLayout;
+    private TextView loadingCurrentFile;
     private ViewManga mangaView;
 
     private boolean exitPlanned;
-
+    private UiThrottleTask throttleTask;
+    private volatile boolean isLoading;
+    private ImageView loadingSpinner;
 
 
     public MangaViewActivity() {
-
         animationForward = new RotateAnimation(0f, 350f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
         animationForward.setInterpolator(new LinearInterpolator());
         animationForward.setRepeatCount(Animation.INFINITE);
@@ -73,6 +78,8 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
         decorView.setSystemUiVisibility(fullScreenFlags);
 
         loadingLayout = (RelativeLayout)findViewById(R.id.layout_loading);
+        loadingCurrentFile = (TextView) findViewById(R.id.viewer_txtPosition);
+        loadingSpinner = (ImageView)findViewById(R.id.viewer_spinner);
 
         mangaView = (ViewManga)findViewById(R.id.view_manga);
 
@@ -152,8 +159,14 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
         switch(action)
         {
             case Gestures.ACTION_NEXT:
+                if(loadingSpinner.getAnimation() != animationForward) {
+                    loadingSpinner.setAnimation(animationForward);
+                }
                 return modelFragment.loadNext();
             case Gestures.ACTION_BACK:
+                if(loadingSpinner.getAnimation() != animationBackward) {
+                    loadingSpinner.setAnimation(animationBackward);
+                }
                 return modelFragment.loadPrevious();
             case Gestures.ACTION_ZOOM_IN:
                 zoomF = mangaView.getZoomState().getZoomFactor();
@@ -194,7 +207,62 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
     }
 
     @Override
-    public void onLoadingChanged(boolean loading, String currentPath) {
+    public void onLoadingChanged(boolean loading, final String currentPath) {
+        isLoading = loading;
+        if (loading) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if(isLoading) {
+                        if (loadingLayout.getVisibility() != View.VISIBLE) {
+                            loadingLayout.setVisibility(View.VISIBLE);
+                        }
+                        loadingCurrentFile.setText(currentPath);
+                    }
+                }
+            });
+        } else {
+            synchronized (MangaViewActivity.this) {
+                if (throttleTask == null) {
+                    throttleTask = new UiThrottleTask();
+                    throttleTask.execute();
+                }
+            }
+        }
+    }
 
+    private class UiThrottleTask extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected Void doInBackground(Void... params) {
+            try {
+                //Hack to avoid loading flickering on fast phones
+                int repeat = 0;
+                while (isLoading || repeat < 3) {
+                    if(isLoading) {
+                        repeat = 0;
+                        Thread.sleep(75);
+                    } else {
+                        repeat++;
+                        Thread.sleep(25);
+                    }
+                }
+            } catch (InterruptedException e) {}
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            if(!isLoading) {
+                Log.d(TAG, "Finished");
+                loadingLayout.setVisibility(View.INVISIBLE);
+                loadingCurrentFile.setText("");
+            } else {
+                Log.d(TAG, "Throttle");
+            }
+
+            synchronized (MangaViewActivity.this) {
+                throttleTask = null;
+            }
+        }
     }
 }
