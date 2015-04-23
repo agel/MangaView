@@ -10,6 +10,7 @@ import com.agel.arch.mangaview.data.MangaFileFilter;
 import com.agel.arch.mangaview.data.ScanStack;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -115,7 +116,7 @@ public class FsModelFragment extends Fragment {
                 }
             }
         } else {
-            File[] contents = new File(entry.Path).listFiles(new MangaFileFilter(true));
+            File[] contents = new File(entry.Path).listFiles((FileFilter)new MangaFileFilter());
 
             if(contents != null) {
                 for (File file : contents) {

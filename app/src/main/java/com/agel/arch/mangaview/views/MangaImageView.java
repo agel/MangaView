@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
@@ -12,11 +13,14 @@ import android.view.View;
 
 public class MangaImageView extends View {
     public Bitmap imageBitmap;
+    public Bitmap zoomBitmap;
     private final Paint imagePaint = new Paint(Paint.FILTER_BITMAP_FLAG);
 
     private RectF viewDimensions = new RectF();
     private RectF imageDimensions = new RectF();
+    private Rect zoomDimensions = new Rect();
     private Matrix scaleMatrix = new Matrix();
+    private Matrix zoomMatrix = new Matrix();
 
     public MangaImageView(Context context) {
         super(context);
@@ -28,6 +32,10 @@ public class MangaImageView extends View {
 
     public boolean hasImage() {
         return imageBitmap != null;
+    }
+
+    public RectF getViewDimensions() {
+        return viewDimensions;
     }
 
     public void setImage(Bitmap bmp) {
@@ -42,9 +50,9 @@ public class MangaImageView extends View {
         scaleMatrix.setRectToRect(imageDimensions, viewDimensions, Matrix.ScaleToFit.CENTER);
 
        //Cleanup memory from old bitmap
-        if(imageBitmap != null)
+        if(imageBitmap != null) {
             imageBitmap.recycle();
-
+        }
         //Set new
         imageBitmap = bmp;
 
@@ -52,11 +60,35 @@ public class MangaImageView extends View {
         invalidate();
     }
 
+    public void setZoomImage(Rect viewRectangle, Bitmap bitmap) {
+        if(zoomBitmap != null) {
+            zoomBitmap.recycle();
+        }
+        zoomBitmap = bitmap;
+
+        Rect dirtyArea = new Rect(zoomDimensions);
+
+        zoomMatrix.setRectToRect(new RectF(0,0,bitmap.getWidth(), bitmap.getHeight()), viewDimensions, Matrix.ScaleToFit.CENTER);
+
+        zoomDimensions = viewRectangle != null ? viewRectangle : new Rect();
+
+        dirtyArea.union(zoomDimensions);
+
+        if(!dirtyArea.isEmpty()) {
+            invalidate(dirtyArea);
+        }
+    }
+
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
+        //TODO draw only dirty region
         if(imageBitmap != null)
         {
             canvas.drawBitmap(imageBitmap, scaleMatrix, imagePaint);
+
+            if(zoomBitmap != null) {
+                canvas.drawBitmap(zoomBitmap, zoomMatrix, imagePaint);
+            }
         }
     }
 
@@ -80,4 +112,6 @@ public class MangaImageView extends View {
             }
         }
     }
+
+
 }

@@ -1,12 +1,11 @@
 package com.agel.arch.mangaview.activities;
 
 import android.app.Activity;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -24,9 +23,9 @@ import com.agel.arch.mangaview.data.Settings;
 import com.agel.arch.mangaview.models.FsModelFragment;
 import com.agel.arch.mangaview.models.ImageModelFragment;
 import com.agel.arch.mangaview.views.MangaImageView;
-import com.agel.arch.mangaview.views.ViewManga;
+import com.agel.arch.mangaview.views.SingleTouchZoomListener;
 
-public class MangaViewActivity extends Activity implements ImageModelFragment.ImageLoadObserver {
+public class MangaViewActivity extends Activity implements ImageModelFragment.ImageLoadObserver, SingleTouchZoomListener.ZoomStateChangedListener {
     private static final String TAG = "MangaViewActivity";
     public static final String ImagePath = "Path";
 
@@ -43,6 +42,8 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
     private UiThrottleTask throttleTask;
     private volatile boolean isLoading;
     private ImageView loadingSpinner;
+
+    private SingleTouchZoomListener touchListener;
 
 
     public MangaViewActivity() {
@@ -98,13 +99,21 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
         }
         modelFragment.addChangeListener(this);
 
+        touchListener = new SingleTouchZoomListener();
+        mangaView.setOnTouchListener(touchListener);
+        touchListener.addZoomStateListener(this);
+
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         if(isFinishing()) {
-            modelFragment.removeChangeListener(this);
+            //TODO investigate lifecycle fuckup
+            if(touchListener != null) {
+                modelFragment.removeChangeListener(this);
+                touchListener.removeZoomStateListener(this);
+            }
             if(isFinishing()) {
                 modelFragment.shutdown();
             }
@@ -115,10 +124,8 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
     protected void onStart() {
         super.onStart();
 
-//        mangaView.initViewDimensions();
-
         if(!mangaView.hasImage()) {
-            modelFragment.loadCurrent();
+            modelFragment.loadCurrent(mangaView.getViewDimensions());
         }
     }
 
@@ -147,28 +154,19 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
             return super.onKeyUp(keyCode, event);
     }
 
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        //Tell mangaView to redraw itself using new dimensions
-//        mangaView.onScreenRotated();
-    }
-
     private boolean processAction(int action) {
-        int zoomF;
-        Settings settings = Settings.getInstance();
         switch(action)
         {
             case Gestures.ACTION_NEXT:
                 if(loadingSpinner.getAnimation() != animationForward) {
                     loadingSpinner.setAnimation(animationForward);
                 }
-                return modelFragment.loadNext();
+                return modelFragment.loadNext(mangaView.getViewDimensions());
             case Gestures.ACTION_BACK:
                 if(loadingSpinner.getAnimation() != animationBackward) {
                     loadingSpinner.setAnimation(animationBackward);
                 }
-                return modelFragment.loadPrevious();
+                return modelFragment.loadPrevious(mangaView.getViewDimensions());
             default:
                 break;
         }
@@ -181,8 +179,13 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
     }
 
     @Override
-    public void onRectangleReady(Rect rectangle, Bitmap bitmap) {
+    public void onZoomedImageReady(Rect rectangle, Bitmap bitmap) {
+        mangaView.setZoomImage(rectangle, bitmap);
+    }
 
+    @Override
+    public void onZoomStateChanged(Rect screenPosition, Point screenPan) {
+        modelFragment.loadZoomed(mangaView.getViewDimensions(), screenPosition, screenPan);
     }
 
     @Override
@@ -225,7 +228,7 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
                         Thread.sleep(25);
                     }
                 }
-            } catch (InterruptedException e) {}
+            } catch (InterruptedException e) { return null; }
             return null;
         }
 

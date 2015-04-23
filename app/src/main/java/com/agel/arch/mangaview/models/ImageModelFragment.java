@@ -4,18 +4,20 @@ import android.app.Fragment;
 import android.database.Observable;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.BitmapRegionDecoder;
+import android.graphics.Point;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 
 import com.agel.arch.mangaview.data.MangaFileFilter;
-import com.agel.arch.mangaview.data.Settings;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -27,7 +29,7 @@ public class ImageModelFragment extends Fragment {
     //Observer
     public interface ImageLoadObserver {
         void onImageReady(Bitmap bitmap);
-        void onRectangleReady(Rect rectangle, Bitmap bitmap);
+        void onZoomedImageReady(Rect rectangle, Bitmap bitmap);
         void onLoadingChanged(boolean loading, String currentPath);
     }
 
@@ -42,11 +44,11 @@ public class ImageModelFragment extends Fragment {
                 });
             }
         }
-        public void notifyRectangleChanged(final Rect rectangle, final Bitmap bitmap) {
+        public void notifyZoomedImageReady(final Rect rectangle, final Bitmap bitmap) {
             for (final ImageLoadObserver observer : mObservers) {
                 uiHandler.post(new Runnable() {
                     public void run() {
-                        observer.onRectangleReady(rectangle, bitmap);
+                        observer.onZoomedImageReady(rectangle, bitmap);
                     }
                 });
 
@@ -54,6 +56,7 @@ public class ImageModelFragment extends Fragment {
         }
         public void notifyLoadingChanged(final boolean loading, final String currentPath) {
             for (final ImageLoadObserver observer : mObservers) {
+                //Theese update view will handle itself
                 observer.onLoadingChanged(loading, currentPath);
             }
         }
@@ -71,6 +74,7 @@ public class ImageModelFragment extends Fragment {
     private final Handler uiHandler;
     private final ImageLoadObservable observers = new ImageLoadObservable();
     private int currentIndex;
+    private BitmapRegionDecoder currentZoomDecoder;
     private File[] directoryFiles;
 
     public ImageModelFragment() {
@@ -84,7 +88,7 @@ public class ImageModelFragment extends Fragment {
         if(currDir.exists())
         {
             //Construct array of all images in same folder
-            directoryFiles = currDir.listFiles(new MangaFileFilter(false));
+            directoryFiles = currDir.listFiles((FilenameFilter) new MangaFileFilter());
             Arrays.sort(directoryFiles);
             currentIndex = Arrays.binarySearch(directoryFiles, currFile);
         }
@@ -92,38 +96,61 @@ public class ImageModelFragment extends Fragment {
         return currentIndex >= 0 && directoryFiles.length > 0;
     }
 
-    public void loadCurrent() {
-        loadImage(currentIndex);
+    public void loadCurrent(RectF viewDimensions) {
+        loadImage(viewDimensions, currentIndex);
     }
 
-    public boolean loadNext() {
+    public boolean loadNext(RectF viewDimensions) {
         if(currentIndex + 1 < directoryFiles.length)
         {
             currentIndex++;
-            loadCurrent();
+            loadCurrent(viewDimensions);
             return false;
         }
         else
             return true;
     }
 
-    public boolean loadPrevious() {
+    public boolean loadPrevious(RectF viewDimensions) {
         if(currentIndex - 1 >= 0)
         {
             currentIndex--;
-            loadCurrent();
+            loadCurrent(viewDimensions);
             return false;
         }
         else
             return true;
     }
 
-    public void loadRectangle() {
+    public void loadZoomed(final RectF viewDimensions, final Rect screenPosition, final Point screenPan) {
+        if(currentZoomDecoder == null) {
+            return;
+        }
 
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                Bitmap bitmap = null;
+                //reduce image on load
+                try {
+                    double xScale = currentZoomDecoder.getWidth() / viewDimensions.right;
+                    double yScale = currentZoomDecoder.getHeight() / viewDimensions.bottom;
+                    Rect imagePoitition = new Rect((int) (screenPosition.left * xScale) + (int) (screenPan.x * xScale), (int) (screenPosition.top * yScale) + (int) (screenPan.y * xScale),
+                            (int) (screenPosition.right * xScale) + (int) (screenPan.x * xScale), (int) (screenPosition.bottom * yScale) + (int) (screenPan.y * xScale));
+                    bitmap = currentZoomDecoder.decodeRegion(imagePoitition, null);
+                } catch (OutOfMemoryError e) {
+                    //TODO handle out of memory
+                }
+
+                if (bitmap != null) {
+                    observers.notifyZoomedImageReady(screenPosition, bitmap);
+                }
+            }
+        });
     }
 
-    private void loadImage(final int idx) {
-        observers.notifyLoadingChanged(true, directoryFiles[idx].getPath());
+    private void loadImage(final RectF viewDimensions, final int idx) {
+        observers.notifyLoadingChanged(true, directoryFiles[idx].getAbsolutePath());
         synchronized (this) {
             executor.execute(new Runnable() {
                 @Override
@@ -133,23 +160,23 @@ public class ImageModelFragment extends Fragment {
                     //reduce image on load
                     try {
 
+
                         //Decode image size
                         BitmapFactory.Options decodeOptions = new BitmapFactory.Options();
                         decodeOptions.inJustDecodeBounds = true;
-
                         BitmapFactory.decodeStream(new FileInputStream(file), null, decodeOptions);
 
-//                    //Free memory for new image
-//                    System.gc();
-
-                        //Decode with inSampleSize
-                        if (decodeOptions.outHeight * decodeOptions.outWidth * 4 > Settings.IMAGE_MAX_SIZE) {
-                            decodeOptions.inSampleSize = (int) Math.round((Math.sqrt(decodeOptions.outHeight * decodeOptions.outWidth * 4) / Math.sqrt(Settings.IMAGE_MAX_SIZE)) + 0.5);
-                        }
+                        decodeOptions.inSampleSize = calculateInSampleSize(decodeOptions, (int)viewDimensions.right, (int)viewDimensions.bottom);
                         decodeOptions.inJustDecodeBounds = false;
 
                         bitmap = BitmapFactory.decodeStream(new FileInputStream(file), null, decodeOptions);
-                    } catch (OutOfMemoryError | FileNotFoundException e) {
+                        //Prepare zoom decoder
+                        if(currentZoomDecoder != null) {
+                            currentZoomDecoder.recycle();
+                        }
+                        currentZoomDecoder = BitmapRegionDecoder.newInstance(new FileInputStream(file), false);
+
+                    } catch (OutOfMemoryError | IOException e) {
                         //TODO handle out of memory
                     }
 
@@ -161,6 +188,28 @@ public class ImageModelFragment extends Fragment {
                 }
             });
         }
+    }
+
+    public static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
+        // Raw height and width of image
+        final int height = options.outHeight;
+        final int width = options.outWidth;
+        int inSampleSize = 1;
+
+        if (height > reqHeight || width > reqWidth) {
+
+            final int halfHeight = height / 2;
+            final int halfWidth = width / 2;
+
+            // Calculate the largest inSampleSize value that is a power of 2 and keeps both
+            // height and width larger than the requested height and width.
+            while ((halfHeight / inSampleSize) > reqHeight
+                    && (halfWidth / inSampleSize) > reqWidth) {
+                inSampleSize *= 2;
+            }
+        }
+
+        return inSampleSize;
     }
 
     @Override
@@ -178,6 +227,9 @@ public class ImageModelFragment extends Fragment {
     }
 
     public void shutdown() {
+        if(currentZoomDecoder != null) {
+            currentZoomDecoder.recycle();
+        }
         executor.shutdownNow();
     }
 }

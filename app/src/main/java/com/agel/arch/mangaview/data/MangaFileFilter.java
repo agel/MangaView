@@ -2,28 +2,26 @@ package com.agel.arch.mangaview.data;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FilenameFilter;
 
-public class MangaFileFilter implements FileFilter {
-    private boolean includeDirectories;
-
-    public MangaFileFilter(boolean includeDirectories) {
-
-        this.includeDirectories = includeDirectories;
-    }
+public class MangaFileFilter implements FileFilter, FilenameFilter {
 
     @Override
     public boolean accept(File file) {
-        String filename = file.getName().toLowerCase();
+        return !file.isHidden() && (file.isDirectory() || checkFile(file.getName()));
+    }
 
-        if(file.isHidden())
-            return false;
+    @Override
+    public boolean accept(File dir, String filename) {
+        File file = new File(filename);
+        return !file.isHidden() && !file.isDirectory() && checkFile(file.getName());
 
-        if(file.isDirectory())
-            return includeDirectories;
+    }
 
-        return (filename.endsWith(".png") ||
-                filename.endsWith(".jpg") ||
-                filename.endsWith(".jpeg") ||
-                filename.endsWith(".gif"));
+    private boolean checkFile(String file) {
+        String filename = file.toLowerCase();
+        return (filename.endsWith(".png")
+                || filename.endsWith(".jpg")
+                || filename.endsWith(".jpeg"));
     }
 }
