@@ -23,6 +23,7 @@ import com.agel.arch.mangaview.data.Gestures;
 import com.agel.arch.mangaview.data.Settings;
 import com.agel.arch.mangaview.models.FsModelFragment;
 import com.agel.arch.mangaview.models.ImageModelFragment;
+import com.agel.arch.mangaview.views.MangaImageView;
 import com.agel.arch.mangaview.views.ViewManga;
 
 public class MangaViewActivity extends Activity implements ImageModelFragment.ImageLoadObserver {
@@ -36,7 +37,7 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
     private ImageModelFragment modelFragment;
     private RelativeLayout loadingLayout;
     private TextView loadingCurrentFile;
-    private ViewManga mangaView;
+    private MangaImageView mangaView;
 
     private boolean exitPlanned;
     private UiThrottleTask throttleTask;
@@ -81,7 +82,7 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
         loadingCurrentFile = (TextView) findViewById(R.id.viewer_txtPosition);
         loadingSpinner = (ImageView)findViewById(R.id.viewer_spinner);
 
-        mangaView = (ViewManga)findViewById(R.id.view_manga);
+        mangaView = (MangaImageView)findViewById(R.id.view_manga);
 
         //Get model
         modelFragment = (ImageModelFragment) getFragmentManager().findFragmentByTag(ImageModelFragment.TAG);
@@ -114,7 +115,7 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
     protected void onStart() {
         super.onStart();
 
-        mangaView.initViewDimensions();
+//        mangaView.initViewDimensions();
 
         if(!mangaView.hasImage()) {
             modelFragment.loadCurrent();
@@ -150,7 +151,7 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         //Tell mangaView to redraw itself using new dimensions
-        mangaView.onConfigurationChanged();
+//        mangaView.onScreenRotated();
     }
 
     private boolean processAction(int action) {
@@ -168,28 +169,6 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
                     loadingSpinner.setAnimation(animationBackward);
                 }
                 return modelFragment.loadPrevious();
-            case Gestures.ACTION_ZOOM_IN:
-                zoomF = mangaView.getZoomState().getZoomFactor();
-                if(zoomF <= 140)
-                    zoomF += 10;
-                else
-                    zoomF = 150;
-                mangaView.getZoomState().setZoomFactor(zoomF);
-                settings.ZoomFactor = zoomF;
-                settings.saveSettings(PreferenceManager.getDefaultSharedPreferences(this), getResources());
-                mangaView.redraw();
-                break;
-            case Gestures.ACTION_ZOOM_OUT:
-                zoomF = mangaView.getZoomState().getZoomFactor();
-                if(zoomF >= 60)
-                    zoomF -= 10;
-                else
-                    zoomF = 50;
-                mangaView.getZoomState().setZoomFactor(zoomF);
-                settings.ZoomFactor = zoomF;
-                settings.saveSettings(PreferenceManager.getDefaultSharedPreferences(this), getResources());
-                mangaView.redraw();
-                break;
             default:
                 break;
         }

@@ -14,6 +14,7 @@ import android.widget.ImageView;
 import com.agel.arch.mangaview.data.Settings;
 import com.agel.arch.mangaview.data.ZoomState;
 
+@Deprecated
 public class ViewManga extends ImageView implements TouchInputListener.TouchObserver {
 
     private final ZoomState zoomState = new ZoomState(Settings.getInstance().ZoomFactor);

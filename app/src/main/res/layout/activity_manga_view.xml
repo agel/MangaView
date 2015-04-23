@@ -4,7 +4,7 @@
     tools:context="com.agel.arch.mangaview.activities.MangaViewActivity"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent">
-    <com.agel.arch.mangaview.views.ViewManga
+    <com.agel.arch.mangaview.views.MangaImageView
         android:id="@+id/view_manga"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"/>

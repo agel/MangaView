@@ -8,6 +8,7 @@ import android.util.SparseIntArray;
 import android.view.KeyEvent;
 import android.widget.Toast;
 
+@Deprecated
 public class Settings {
     public static final String PrefsId_lib_root = "prefs_LibraryRoot";
     public static final String PrefsId_show_with_images = "prefs_ShowWithImages";

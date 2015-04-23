@@ -8,6 +8,7 @@ import android.view.View.OnTouchListener;
 
 import com.agel.arch.mangaview.data.ZoomState;
 
+@Deprecated
 public class TouchInputListener implements OnTouchListener{
     //Event Observer
     public interface TouchObserver {
@@ -41,47 +42,50 @@ public class TouchInputListener implements OnTouchListener{
     public boolean onTouch(View v, MotionEvent event) {
 
         final int action = event.getAction();
-        Point touchCoord = new Point((int)event.getX(),(int)event.getY());
+        Point touchCoordinate = new Point((int)event.getX(),(int)event.getY());
 
         switch (action) {
             case MotionEvent.ACTION_DOWN:
-                mStartX = touchCoord.x;
-                mStartY = touchCoord.y;
+                mStartX = touchCoordinate.x;
+                mStartY = touchCoordinate.y;
+
+                //TODO switch to pan if touched inside zoom rectangle
+//                if(mState.getZoomState() == ZoomState.ZOOM_STATE_ZOOM)
+//                {
+//                    mState.setZoomState(ZoomState.ZOOM_STATE_PAN);
+//                }
 
                 if(mState.getZoomState() == ZoomState.ZOOM_STATE_NONE)
                     mState.setZoomState(ZoomState.ZOOM_STATE_ZOOM);
                 if(mState.getZoomState() == ZoomState.ZOOM_STATE_ZOOM)
-                    mState.setCenter(touchCoord);
+                    mState.setCenter(touchCoordinate);
                 if(mState.getZoomState() == ZoomState.ZOOM_STATE_PAN)
                 {
-                    if(!mState.getRectDst().contains(touchCoord.x, touchCoord.y))
+                    if(!mState.getRectDst().contains(touchCoordinate.x, touchCoordinate.y))
                     {
                         mState.setZoomState(ZoomState.ZOOM_STATE_ZOOM);
-                        mState.setCenter(touchCoord);
+                        mState.setCenter(touchCoordinate);
                     }
                     else
-                        mState.setPanStart(touchCoord.x, touchCoord.y);
+                        mState.setPanStart(touchCoordinate.x, touchCoordinate.y);
                 }
+
+
                 break;
             case MotionEvent.ACTION_MOVE:
                 if (mState.getZoomState() == ZoomState.ZOOM_STATE_ZOOM) {
-                    mState.setSize(touchCoord.x,touchCoord.y);
+                    mState.setSize(touchCoordinate.x,touchCoordinate.y);
                     observers.onTouchAction();
                 }
-                else
-                if(mState.getZoomState() == ZoomState.ZOOM_STATE_PAN )
+                else if(mState.getZoomState() == ZoomState.ZOOM_STATE_PAN)
                 {
-                    mState.setPan(touchCoord.x,touchCoord.y);
+                    mState.setPan(touchCoordinate.x,touchCoordinate.y);
                     observers.onTouchAction();
                 }
-
                 break;
             case MotionEvent.ACTION_UP :
 
-                if(mState.getZoomState() == ZoomState.ZOOM_STATE_ZOOM)
-                {
-                    mState.setZoomState(ZoomState.ZOOM_STATE_PAN);
-                }
+
                 break;
         }
 

@@ -5,6 +5,7 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.util.Log;
 
+@Deprecated
 public class ZoomState {
     public static final String TAG = "ZoomState";
     public final static int ZOOM_STATE_NONE = 0;
