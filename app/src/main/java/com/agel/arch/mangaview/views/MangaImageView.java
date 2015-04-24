@@ -15,8 +15,6 @@ public class MangaImageView extends View {
     public Bitmap imageBitmap;
     public Bitmap zoomBitmap;
     private final Paint imagePaint = new Paint(Paint.FILTER_BITMAP_FLAG);
-    @Deprecated
-    private final Paint mDebugPaint = new Paint();
 
 
     private RectF viewDimensions = new RectF();
@@ -98,8 +96,6 @@ public class MangaImageView extends View {
             canvas.drawBitmap(imageBitmap, scaleMatrix, imagePaint);
 
             if(zoomBitmap != null) {
-                mDebugPaint.setColor(0xFFFF0000);
-//                canvas.drawRect(zoomRectangle, mDebugPaint);
                 canvas.drawBitmap(zoomBitmap, null, zoomDimensions, imagePaint);
 //                canvas.drawBitmap(zoomBitmap, zoomMatrix, imagePaint);
             }
