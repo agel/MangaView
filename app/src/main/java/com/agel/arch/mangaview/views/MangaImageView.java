@@ -15,6 +15,9 @@ public class MangaImageView extends View {
     public Bitmap imageBitmap;
     public Bitmap zoomBitmap;
     private final Paint imagePaint = new Paint(Paint.FILTER_BITMAP_FLAG);
+    @Deprecated
+    private final Paint mDebugPaint = new Paint();
+
 
     private RectF viewDimensions = new RectF();
     private RectF imageDimensions = new RectF();
@@ -53,6 +56,10 @@ public class MangaImageView extends View {
         if(imageBitmap != null) {
             imageBitmap.recycle();
         }
+        if(zoomBitmap != null) {
+            zoomBitmap.recycle();
+            zoomBitmap = null;
+        }
         //Set new
         imageBitmap = bmp;
 
@@ -60,17 +67,21 @@ public class MangaImageView extends View {
         invalidate();
     }
 
-    public void setZoomImage(Rect viewRectangle, Bitmap bitmap) {
+    public void setZoomImage(Rect zoomRectangle, Bitmap bitmap) {
+
         if(zoomBitmap != null) {
             zoomBitmap.recycle();
         }
+
         zoomBitmap = bitmap;
+
+        if(bitmap != null) {
+            zoomMatrix.setRectToRect(new RectF(0,0,bitmap.getWidth(), bitmap.getHeight()), viewDimensions, Matrix.ScaleToFit.CENTER);
+        }
 
         Rect dirtyArea = new Rect(zoomDimensions);
 
-        zoomMatrix.setRectToRect(new RectF(0,0,bitmap.getWidth(), bitmap.getHeight()), viewDimensions, Matrix.ScaleToFit.CENTER);
-
-        zoomDimensions = viewRectangle != null ? viewRectangle : new Rect();
+        zoomDimensions = zoomRectangle;
 
         dirtyArea.union(zoomDimensions);
 
@@ -87,7 +98,10 @@ public class MangaImageView extends View {
             canvas.drawBitmap(imageBitmap, scaleMatrix, imagePaint);
 
             if(zoomBitmap != null) {
-                canvas.drawBitmap(zoomBitmap, zoomMatrix, imagePaint);
+                mDebugPaint.setColor(0xFFFF0000);
+//                canvas.drawRect(zoomRectangle, mDebugPaint);
+                canvas.drawBitmap(zoomBitmap, null, zoomDimensions, imagePaint);
+//                canvas.drawBitmap(zoomBitmap, zoomMatrix, imagePaint);
             }
         }
     }

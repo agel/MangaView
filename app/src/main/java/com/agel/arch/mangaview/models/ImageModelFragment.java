@@ -135,9 +135,10 @@ public class ImageModelFragment extends Fragment {
                 try {
                     double xScale = currentZoomDecoder.getWidth() / viewDimensions.right;
                     double yScale = currentZoomDecoder.getHeight() / viewDimensions.bottom;
-                    Rect imagePoitition = new Rect((int) (screenPosition.left * xScale) + (int) (screenPan.x * xScale), (int) (screenPosition.top * yScale) + (int) (screenPan.y * xScale),
-                            (int) (screenPosition.right * xScale) + (int) (screenPan.x * xScale), (int) (screenPosition.bottom * yScale) + (int) (screenPan.y * xScale));
-                    bitmap = currentZoomDecoder.decodeRegion(imagePoitition, null);
+                    Rect imagePosition = new Rect((int) (screenPosition.left * xScale) + (int) (screenPan.x * xScale* 0.1), (int) (screenPosition.top * yScale) + (int) (screenPan.y * xScale* 0.1),
+                            (int) (screenPosition.right * xScale) + (int) (screenPan.x * xScale * 0.1), (int) (screenPosition.bottom * yScale) + (int) (screenPan.y * xScale * 0.1));
+
+                    bitmap = currentZoomDecoder.decodeRegion(imagePosition, null);
                 } catch (OutOfMemoryError e) {
                     //TODO handle out of memory
                 }

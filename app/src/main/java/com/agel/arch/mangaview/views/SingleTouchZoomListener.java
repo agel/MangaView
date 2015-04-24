@@ -2,16 +2,13 @@ package com.agel.arch.mangaview.views;
 
 import android.database.Observable;
 import android.graphics.Point;
-import android.graphics.PointF;
 import android.graphics.Rect;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
-import com.agel.arch.mangaview.data.ZoomState;
-
-import java.io.PipedReader;
-
 public class SingleTouchZoomListener implements View.OnTouchListener {
+    private final static String TAG = "SingleTouchZoomListener";
     public final static int ZOOM_STATE_NONE = 0;
     public final static int ZOOM_STATE_ZOOM = 1;
     public final static int ZOOM_STATE_PAN = 2;
@@ -50,8 +47,9 @@ public class SingleTouchZoomListener implements View.OnTouchListener {
                     zoomCenter = new Point(touchCoordinate);
                 } else if(currentState == ZOOM_STATE_ZOOM && currentZoom.contains(touchStart.x, touchStart.y)) {
                     currentState = ZOOM_STATE_PAN;
+                } else if(!currentZoom.contains(touchCoordinate.x, touchCoordinate.y)){
+                    clearZoom();
                 }
-
                 break;
             case MotionEvent.ACTION_MOVE:
                 if (currentState == ZOOM_STATE_ZOOM) {
@@ -85,11 +83,26 @@ public class SingleTouchZoomListener implements View.OnTouchListener {
                 break;
             case MotionEvent.ACTION_UP :
 
-//                Math.sqrt(Math.pow(clickX - centerX, 2) + Math.pow(clickY - centerY, 2));
+                double distance = Math.sqrt(Math.pow(Math.abs(touchCoordinate.x - touchStart.x), 2) + Math.pow(Math.abs(touchCoordinate.y - touchStart.y), 2));
+                Log.d(TAG, "Touch distance: " + Double.toString(distance));
+                if(distance < 5) {
+                    currentState = ZOOM_STATE_NONE;
+                    clearZoom();
+                }
+                observer.onTouchAction(currentZoom, currentPan);
                 break;
         }
 
         return true;
+    }
+
+    private void clearZoom() {
+        currentZoom.left = 0;
+        currentZoom.top = 0;
+        currentZoom.right = 0;
+        currentZoom.bottom = 0;
+        currentPan.x = 0;
+        currentPan.y = 0;
     }
 
     public void addZoomStateListener(ZoomStateChangedListener listener) {

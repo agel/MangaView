@@ -185,7 +185,11 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
 
     @Override
     public void onZoomStateChanged(Rect screenPosition, Point screenPan) {
-        modelFragment.loadZoomed(mangaView.getViewDimensions(), screenPosition, screenPan);
+        if(!screenPosition.isEmpty()) {
+            modelFragment.loadZoomed(mangaView.getViewDimensions(), screenPosition, screenPan);
+        } else {
+            mangaView.setZoomImage(screenPosition, null);
+        }
     }
 
     @Override
