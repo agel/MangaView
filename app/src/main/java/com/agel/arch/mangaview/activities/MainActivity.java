@@ -80,7 +80,7 @@ public class MainActivity extends ActionBarActivity
 
             rootEntry = modelFragment.getRootEntry();
             currentFsEntry = rootEntry;
-
+            setLoading(true);
             modelFragment.scan();
         }
 
