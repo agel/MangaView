@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.animation.Animation;
 import android.view.animation.LinearInterpolator;
@@ -103,6 +104,14 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
         mangaView.setOnTouchListener(touchListener);
         touchListener.addZoomStateListener(this);
 
+        mangaView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                if(!mangaView.hasImage()) {
+                    modelFragment.loadCurrent(mangaView.getViewDimensions());
+                }
+            }
+        });
     }
 
     @Override
@@ -117,15 +126,6 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
             if(isFinishing()) {
                 modelFragment.shutdown();
             }
-        }
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-
-        if(!mangaView.hasImage()) {
-            modelFragment.loadCurrent(mangaView.getViewDimensions());
         }
     }
 

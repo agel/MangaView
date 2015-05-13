@@ -79,7 +79,7 @@ public class MangaImageView extends View {
 
         Rect dirtyArea = new Rect(zoomDimensions);
 
-        zoomDimensions = zoomRectangle;
+        zoomDimensions = new Rect(zoomRectangle);
 
         dirtyArea.union(zoomDimensions);
 
@@ -122,6 +122,4 @@ public class MangaImageView extends View {
             }
         }
     }
-
-
 }
