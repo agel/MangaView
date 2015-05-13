@@ -147,12 +147,13 @@ public class ImageModelFragment extends Fragment {
 
         PointF zoomCenter = new PointF((displayZoom.left + ((displayZoom.right - displayZoom.left) / 2f)), (displayZoom.top + ((displayZoom.bottom - displayZoom.top) / 2f)));
 
-        zoomCenter.offset(displayPan.x * mtxValues[Matrix.MSCALE_X], displayPan.y * mtxValues[Matrix.MSCALE_X]);
-
         float centX = ((zoomCenter.x - mtxValues[Matrix.MTRANS_X]) / mtxValues[Matrix.MSCALE_X]);
         float centY = ((zoomCenter.y - mtxValues[Matrix.MTRANS_Y]) / mtxValues[Matrix.MSCALE_X]);
         float sizeX = ((displayZoom.right - displayZoom.left) / 2f);
         float sizeY = ((displayZoom.bottom - displayZoom.top) / 2f);
+
+        centX += displayPan.x * 0.5f / mtxValues[Matrix.MSCALE_X];
+        centY += displayPan.y * 0.5f / mtxValues[Matrix.MSCALE_X];
 
         //TODO ZoomFactor adjusted by user
         sizeX = sizeX  * 0.5f / (mtxValues[Matrix.MSCALE_X] * (100f/100f));
@@ -186,6 +187,7 @@ public class ImageModelFragment extends Fragment {
             zoomImgRect.bottom = imgHeight;
             zoomImgRect.top = (int) (imgHeight - 2 * sizeY);
         }
+        Log.d(TAG, String.format("Display: w%s h%s, Image: w%s h%s", displayZoom.right - displayZoom.left, displayZoom.bottom - displayZoom.top, zoomImgRect.right - zoomImgRect.left, zoomImgRect.bottom - zoomImgRect.top));
         return zoomImgRect;
     }
 

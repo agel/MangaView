@@ -45,6 +45,7 @@ public class SingleTouchZoomListener implements View.OnTouchListener {
                         prevPan = new Point(currentPan);
                     }
                 } else {
+                    currentState = ZOOM_STATE_ZOOM;
                     clearRectangles();
                     zoomCenter = new Point(touchCoordinate);
                 }
@@ -74,8 +75,17 @@ public class SingleTouchZoomListener implements View.OnTouchListener {
                 listener.onZoomStateChanged(currentZoom, currentPan);
                 break;
         }
-
+//        Log.d(TAG, String.format("Center: %s, Zoom: w%s h%s", zoomCenter, currentZoom.right - currentZoom.left, currentZoom.bottom - currentZoom.top));
         return true;
+    }
+
+    public void reset()
+    {
+        currentState = ZOOM_STATE_NONE;
+        zoomCenter.x = 0;
+        zoomCenter.y = 0;
+        clearRectangles();
+        listener.onZoomStateChanged(currentZoom, currentPan);
     }
 
     private void clearRectangles() {

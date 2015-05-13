@@ -129,6 +129,7 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
         }
     }
 
+
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event){
         if(Settings.getInstance().mKeySetting.get(keyCode) > 0)
@@ -161,11 +162,13 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
                 if(loadingSpinner.getAnimation() != animationForward) {
                     loadingSpinner.setAnimation(animationForward);
                 }
+                touchListener.reset();
                 return modelFragment.loadNext(mangaView.getViewDimensions());
             case Gestures.ACTION_BACK:
                 if(loadingSpinner.getAnimation() != animationBackward) {
                     loadingSpinner.setAnimation(animationBackward);
                 }
+                touchListener.reset();
                 return modelFragment.loadPrevious(mangaView.getViewDimensions());
             default:
                 break;
