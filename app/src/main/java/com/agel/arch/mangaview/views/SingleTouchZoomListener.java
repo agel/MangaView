@@ -17,19 +17,12 @@ public class SingleTouchZoomListener implements View.OnTouchListener {
         void onZoomStateChanged(Rect screenPosition, Point screenPan);
     }
 
-    //Observable manager
-    private class TouchObservable extends Observable<ZoomStateChangedListener> {
-        public void onTouchAction(Rect screenPosition, Point currentPan) {
-            for (final ZoomStateChangedListener observer : mObservers) {
-                observer.onZoomStateChanged(screenPosition, currentPan);
-            }
-        }
-    }
-
-    private TouchObservable observer = new TouchObservable();
+    private ZoomStateChangedListener listener = null;
     private int currentState = ZOOM_STATE_NONE;
+
     private Rect currentZoom = new Rect();
     private Point currentPan = new Point();
+
     private Point zoomCenter = new Point();
     private Point touchStart = new Point();
 
@@ -57,28 +50,13 @@ public class SingleTouchZoomListener implements View.OnTouchListener {
                     currentZoom.top = zoomCenter.y - Math.abs(zoomCenter.y - touchCoordinate.y);
                     currentZoom.right = zoomCenter.x + Math.abs(zoomCenter.x - touchCoordinate.x);
                     currentZoom.bottom = zoomCenter.y + Math.abs(zoomCenter.y - touchCoordinate.y);
-
-//                    //Enforcing Zoom limits
-//                    if(currentZoom.left < 0)
-//                        currentZoom.left = 0;
-//
-//                    if(currentZoom.top < 0)
-//                        currentZoom.top = 0;
-//
-//                    if(currentZoom.right > scr.right)
-//                        currentZoom.right = scr.right;
-//
-//                    if(currentZoom.bottom > scr.bottom)
-//                        currentZoom.bottom = scr.bottom;
-
-
                 } else if(currentState == ZOOM_STATE_PAN) {
                     currentPan.offset(touchStart.x - touchCoordinate.x, touchStart.y - touchCoordinate.y);
                 } else {
                     break;
                 }
 
-                observer.onTouchAction(currentZoom, currentPan);
+                listener.onZoomStateChanged(currentZoom, currentPan);
 
                 break;
             case MotionEvent.ACTION_UP :
@@ -89,7 +67,7 @@ public class SingleTouchZoomListener implements View.OnTouchListener {
                     currentState = ZOOM_STATE_NONE;
                     clearZoom();
                 }
-                observer.onTouchAction(currentZoom, currentPan);
+                listener.onZoomStateChanged(currentZoom, currentPan);
                 break;
         }
 
@@ -105,11 +83,7 @@ public class SingleTouchZoomListener implements View.OnTouchListener {
         currentPan.y = 0;
     }
 
-    public void addZoomStateListener(ZoomStateChangedListener listener) {
-        observer.registerObserver(listener);
-    }
-
-    public void removeZoomStateListener(ZoomStateChangedListener  listener) {
-        observer.unregisterObserver(listener);
+    public void setZoomStateListener(ZoomStateChangedListener listener) {
+        this.listener = listener;
     }
 }

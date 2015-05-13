@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -101,8 +102,8 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
         modelFragment.addChangeListener(this);
 
         touchListener = new SingleTouchZoomListener();
+        touchListener.setZoomStateListener(this);
         mangaView.setOnTouchListener(touchListener);
-        touchListener.addZoomStateListener(this);
 
         mangaView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
@@ -121,7 +122,7 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
             //TODO investigate lifecycle fuckup
             if(touchListener != null) {
                 modelFragment.removeChangeListener(this);
-                touchListener.removeZoomStateListener(this);
+                touchListener.setZoomStateListener(null);
             }
             if(isFinishing()) {
                 modelFragment.shutdown();
@@ -184,11 +185,28 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
     }
 
     @Override
-    public void onZoomStateChanged(Rect screenPosition, Point screenPan) {
-        if(!screenPosition.isEmpty()) {
-            modelFragment.loadZoomed(mangaView.getViewDimensions(), screenPosition, screenPan);
+    public void onZoomStateChanged(Rect currentZoom, Point screenPan) {
+        if(!currentZoom.isEmpty()) {
+            RectF scr = mangaView.getViewDimensions();
+
+            //Enforcing Zoom limits
+            if(currentZoom.left < 0)
+                currentZoom.left = 0;
+
+            if(currentZoom.top < 0)
+                currentZoom.top = 0;
+
+            if(currentZoom.right > scr.right)
+                currentZoom.right = (int) scr.right;
+
+            if(currentZoom.bottom > scr.bottom)
+                currentZoom.bottom = (int) scr.bottom;
+
+            //TODO enforce pan limits
+
+            modelFragment.loadZoomed(mangaView.getViewDimensions(), currentZoom, screenPan);
         } else {
-            mangaView.setZoomImage(screenPosition, null);
+            mangaView.setZoomImage(currentZoom, null);
         }
     }
 
