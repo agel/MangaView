@@ -94,9 +94,8 @@ public class ViewManga extends ImageView implements TouchInputListener.TouchObse
 		{
 			canvas.drawBitmap(mBitmap,matrix,mBitmapPaint);
 
-            if(zoomState.getZoomState() != ZoomState.ZOOM_STATE_NONE) {
-                mDebugPaint.setColor(0xFFFF0000);
-                canvas.drawRect(zoomState.getRectDst(), mDebugPaint);
+            if(zoomState.getZoomState() != ZoomState.ZOOM_STATE_NONE && mtxValues[0] < 1) {
+                canvas.drawBitmap(mBitmap,zoomState.getRectSrc(),zoomState.getRectDst(),mBitmapPaint);
             }
 		}
 	}

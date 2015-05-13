@@ -5,12 +5,15 @@ import android.database.Observable;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.BitmapRegionDecoder;
+import android.graphics.Matrix;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import com.agel.arch.mangaview.data.MangaFileFilter;
 
@@ -76,6 +79,9 @@ public class ImageModelFragment extends Fragment {
     private int currentIndex;
     private BitmapRegionDecoder currentZoomDecoder;
     private File[] directoryFiles;
+    private Rect zoomImgRect = new Rect();
+    private Matrix zoomMatrix = new Matrix();
+    private float mtxValues[] = new float[9];
 
     public ImageModelFragment() {
         uiHandler = new Handler(Looper.getMainLooper());
@@ -122,6 +128,67 @@ public class ImageModelFragment extends Fragment {
             return true;
     }
 
+    public Rect calcZoomRectangles(Rect displayZoom, Point displayPan, RectF screenDimensions, int imgWidth, int imgHeight) {
+        //Enforcing Zoom limits
+        if(displayZoom.left < 0)
+            displayZoom.left = 0;
+
+        if(displayZoom.top < 0)
+            displayZoom.top = 0;
+
+        if(displayZoom.right > screenDimensions.right)
+            displayZoom.right = (int) screenDimensions.right;
+
+        if(displayZoom.bottom > screenDimensions.bottom)
+            displayZoom.bottom = (int) screenDimensions.bottom;
+
+        zoomMatrix.setRectToRect(new RectF(0,0,imgWidth, imgHeight), screenDimensions, Matrix.ScaleToFit.CENTER);
+        zoomMatrix.getValues(mtxValues);
+
+        PointF zoomCenter = new PointF((displayZoom.left + ((displayZoom.right - displayZoom.left) / 2f)), (displayZoom.top + ((displayZoom.bottom - displayZoom.top) / 2f)));
+
+        zoomCenter.offset(displayPan.x * mtxValues[Matrix.MSCALE_X], displayPan.y * mtxValues[Matrix.MSCALE_X]);
+
+        float centX = ((zoomCenter.x - mtxValues[Matrix.MTRANS_X]) / mtxValues[Matrix.MSCALE_X]);
+        float centY = ((zoomCenter.y - mtxValues[Matrix.MTRANS_Y]) / mtxValues[Matrix.MSCALE_X]);
+        float sizeX = ((displayZoom.right - displayZoom.left) / 2f);
+        float sizeY = ((displayZoom.bottom - displayZoom.top) / 2f);
+
+        //TODO ZoomFactor adjusted by user
+        sizeX = sizeX  * 0.5f / (mtxValues[Matrix.MSCALE_X] * (100f/100f));
+        sizeY = sizeY  * 0.5f / (mtxValues[Matrix.MSCALE_X] * (100f/100f));
+
+        zoomImgRect.left = (int) (centX - sizeX);
+        zoomImgRect.top = (int) (centY - sizeY);
+        zoomImgRect.right = (int) (centX + sizeX);
+        zoomImgRect.bottom = (int) (centY + sizeY);
+
+        //Enforcing pan limits
+        if(zoomImgRect.left < 0)
+        {
+            zoomImgRect.left = 0;
+            zoomImgRect.right = (int) (sizeX * 2);
+        }
+        if(zoomImgRect.top < 0)
+        {
+            zoomImgRect.top = 0;
+            zoomImgRect.bottom = (int) (sizeY * 2);
+        }
+
+        if(zoomImgRect.right > imgWidth)
+        {
+            zoomImgRect.right = imgWidth;
+            zoomImgRect.left = (int) (imgWidth - 2 * sizeX);
+        }
+
+        if(zoomImgRect.bottom > imgHeight)
+        {
+            zoomImgRect.bottom = imgHeight;
+            zoomImgRect.top = (int) (imgHeight - 2 * sizeY);
+        }
+        return zoomImgRect;
+    }
+
     public void loadZoomed(final RectF viewDimensions, final Rect screenPosition, final Point screenPan) {
         if(currentZoomDecoder == null) {
             return;
@@ -131,16 +198,15 @@ public class ImageModelFragment extends Fragment {
             @Override
             public void run() {
                 Bitmap bitmap = null;
-                //reduce image on load
-                try {
-                    double xScale = currentZoomDecoder.getWidth() / viewDimensions.right;
-                    double yScale = currentZoomDecoder.getHeight() / viewDimensions.bottom;
-                    Rect imagePosition = new Rect((int) (screenPosition.left * xScale) + (int) (screenPan.x * xScale* 0.1), (int) (screenPosition.top * yScale) + (int) (screenPan.y * xScale* 0.1),
-                            (int) (screenPosition.right * xScale) + (int) (screenPan.x * xScale * 0.1), (int) (screenPosition.bottom * yScale) + (int) (screenPan.y * xScale * 0.1));
+                Rect imagePosition = calcZoomRectangles(screenPosition, screenPan, viewDimensions, currentZoomDecoder.getWidth(), currentZoomDecoder.getHeight());
 
+                //Load part of the image
+                try {
                     bitmap = currentZoomDecoder.decodeRegion(imagePosition, null);
                 } catch (OutOfMemoryError e) {
-                    //TODO handle out of memory
+                    Log.e(TAG, "Out of memory while zooming");
+                } catch (Exception ex) {
+                    Log.e(TAG, String.format("Wrong zoom dimensions: %s", imagePosition));
                 }
 
                 if (bitmap != null) {
@@ -160,16 +226,14 @@ public class ImageModelFragment extends Fragment {
                     Bitmap bitmap = null;
                     //reduce image on load
                     try {
-
-
                         //Decode image size
                         BitmapFactory.Options decodeOptions = new BitmapFactory.Options();
                         decodeOptions.inJustDecodeBounds = true;
                         BitmapFactory.decodeStream(new FileInputStream(file), null, decodeOptions);
-
+                        //Calculate downsampling
                         decodeOptions.inSampleSize = calculateInSampleSize(decodeOptions, (int)viewDimensions.right, (int)viewDimensions.bottom);
                         decodeOptions.inJustDecodeBounds = false;
-
+                        //Decode actual bitmap
                         bitmap = BitmapFactory.decodeStream(new FileInputStream(file), null, decodeOptions);
                         //Prepare zoom decoder
                         if(currentZoomDecoder != null) {
@@ -178,7 +242,7 @@ public class ImageModelFragment extends Fragment {
                         currentZoomDecoder = BitmapRegionDecoder.newInstance(new FileInputStream(file), false);
 
                     } catch (OutOfMemoryError | IOException e) {
-                        //TODO handle out of memory
+                        Log.e(TAG, "Out of memory while loading");
                     }
 
                     observers.notifyLoadingChanged(false, null);

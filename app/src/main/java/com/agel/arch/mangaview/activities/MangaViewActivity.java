@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.Rect;
-import android.graphics.RectF;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -187,25 +186,10 @@ public class MangaViewActivity extends Activity implements ImageModelFragment.Im
     @Override
     public void onZoomStateChanged(Rect currentZoom, Point screenPan) {
         if(!currentZoom.isEmpty()) {
-            RectF scr = mangaView.getViewDimensions();
-
-            //Enforcing Zoom limits
-            if(currentZoom.left < 0)
-                currentZoom.left = 0;
-
-            if(currentZoom.top < 0)
-                currentZoom.top = 0;
-
-            if(currentZoom.right > scr.right)
-                currentZoom.right = (int) scr.right;
-
-            if(currentZoom.bottom > scr.bottom)
-                currentZoom.bottom = (int) scr.bottom;
-
-            //TODO enforce pan limits
-
+            //Load new zoomed part
             modelFragment.loadZoomed(mangaView.getViewDimensions(), currentZoom, screenPan);
         } else {
+            //Clear zoom
             mangaView.setZoomImage(currentZoom, null);
         }
     }
