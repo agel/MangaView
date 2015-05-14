@@ -187,20 +187,21 @@ public class ImageModelFragment extends Fragment {
             zoomImgRect.bottom = imgHeight;
             zoomImgRect.top = (int) (imgHeight - 2 * sizeY);
         }
-        Log.d(TAG, String.format("Display: w%s h%s, Image: w%s h%s", displayZoom.right - displayZoom.left, displayZoom.bottom - displayZoom.top, zoomImgRect.right - zoomImgRect.left, zoomImgRect.bottom - zoomImgRect.top));
         return zoomImgRect;
     }
 
-    public void loadZoomed(final RectF viewDimensions, final Rect screenPosition, final Point screenPan) {
+    public void loadZoomed(RectF viewDimensions, Rect screenPosition, Point screenPan) {
         if(currentZoomDecoder == null) {
             return;
         }
-
+        final Point pan = new Point(screenPan);
+        final Rect drawPosition = new Rect(screenPosition);
+        final RectF screenSize = new RectF(viewDimensions);
         executor.execute(new Runnable() {
             @Override
             public void run() {
                 Bitmap bitmap = null;
-                Rect imagePosition = calcZoomRectangles(screenPosition, screenPan, viewDimensions, currentZoomDecoder.getWidth(), currentZoomDecoder.getHeight());
+                Rect imagePosition = calcZoomRectangles(drawPosition, pan, screenSize, currentZoomDecoder.getWidth(), currentZoomDecoder.getHeight());
 
                 //Load part of the image
                 try {
@@ -212,7 +213,7 @@ public class ImageModelFragment extends Fragment {
                 }
 
                 if (bitmap != null) {
-                    observers.notifyZoomedImageReady(screenPosition, bitmap);
+                    observers.notifyZoomedImageReady(drawPosition, bitmap);
                 }
             }
         });
