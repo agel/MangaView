@@ -1,8 +1,10 @@
 package com.agel.arch.mangaview.fragments.manga;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.ListFragment;
+import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
 
@@ -30,24 +32,29 @@ public class FileSystemFragment extends ListFragment implements FsModelFragment.
 
     @Override
     public void onDetach() {
-        mainActivity.getModelFragment().removeChangeListener(this);
+        try {
+            mainActivity.getModelFragment().removeChangeListener(this);
+        } catch (Exception e) {
+            Log.d("Manga", "Detach " + e.getMessage());
+        }
         super.onDetach();
     }
 
     @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-        mainActivity = (MainActivity) activity;
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        mainActivity = (MainActivity) this.getActivity();
         mainActivity.onSectionAttached(MainActivity.FilesystemSection);
 
         listAdapter = new FileSystemAdapter(getActivity(), R.layout.fs_item);
         setListAdapter(listAdapter);
 
-        mainActivity.getModelFragment().addChangeListener(this);
-
-        final List<FileEntry> children = mainActivity.getCurrentFsEntry().Children;
-        synchronized (children) {
-            listAdapter.addAll(children);
+        if(mainActivity.getModelFragment() != null) {
+            mainActivity.getModelFragment().addChangeListener(this);
+            final List<FileEntry> children = mainActivity.getCurrentFsEntry().Children;
+            synchronized (children) {
+                listAdapter.addAll(children);
+            }
         }
     }
 

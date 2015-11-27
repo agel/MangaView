@@ -16,7 +16,7 @@ public class FileEntry implements Comparable<FileEntry> {
     public Boolean IsDirectory;
     public String Name;
     public FileEntry Parent;
-    public List<FileEntry> Children = Collections.synchronizedList(new ArrayList<FileEntry>());
+    public final List<FileEntry> Children = Collections.synchronizedList(new ArrayList<FileEntry>());
 
     public FileEntry() {
         Name = "Root";

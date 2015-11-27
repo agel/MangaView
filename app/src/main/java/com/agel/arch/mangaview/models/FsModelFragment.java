@@ -1,8 +1,12 @@
 package com.agel.arch.mangaview.models;
 
+import android.Manifest;
+import android.app.Application;
+import android.content.pm.PackageManager;
 import android.database.Observable;
 import android.os.Bundle;
 import android.app.Fragment;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
 import com.agel.arch.mangaview.data.FileEntry;
@@ -15,9 +19,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Created by agel on 08.04.15.
- */
 public class FsModelFragment extends Fragment {
     public static final String TAG = "FsModelFragment";
 
@@ -47,7 +48,7 @@ public class FsModelFragment extends Fragment {
     //Members
     private final FsThreadPoolExecutor executor = new FsThreadPoolExecutor();
     private ScanProgressObservable eventListeners = new ScanProgressObservable();
-    private final FileEntry rootEntry;
+    private FileEntry rootEntry;
     private boolean scanFinished = false;
 
     public FsModelFragment() {
@@ -55,12 +56,14 @@ public class FsModelFragment extends Fragment {
         rootEntry = new FileEntry();
 
         if(external_storage != null) {
-            new FileEntry(new File(external_storage), rootEntry);
+            FileEntry ext = new FileEntry(new File(external_storage), rootEntry);
+            ext.IsDirectory = true;
         }
 
         final String secondary_storage = System.getenv("SECONDARY_STORAGE");
         if(secondary_storage != null) {
-            new FileEntry(new File(secondary_storage), rootEntry);
+            FileEntry sec = new FileEntry(new File(secondary_storage), rootEntry);
+            sec.IsDirectory = true;
         }
     }
 
@@ -82,10 +85,6 @@ public class FsModelFragment extends Fragment {
 
     public FileEntry getRootEntry() {
         return rootEntry;
-    }
-
-    public boolean isScanFinished() {
-        return scanFinished;
     }
 
     public void scan() {
@@ -127,7 +126,8 @@ public class FsModelFragment extends Fragment {
                 }
                 entry.sort();
             } else {
-                Log.w("Manga", "WTF? - " + entry.Path);
+                //TODO alert
+                Log.w("Manga", "Access denied to: " + entry.Path);
             }
         }
 
