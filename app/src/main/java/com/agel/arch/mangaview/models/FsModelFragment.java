@@ -1,68 +1,52 @@
 package com.agel.arch.mangaview.models;
 
-import android.Manifest;
-import android.app.Application;
-import android.content.pm.PackageManager;
+import android.app.Fragment;
 import android.database.Observable;
 import android.os.Bundle;
-import android.app.Fragment;
-import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
 import com.agel.arch.mangaview.data.FileEntry;
 import com.agel.arch.mangaview.data.MangaFileFilter;
-import com.agel.arch.mangaview.data.ScanStack;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 public class FsModelFragment extends Fragment {
     public static final String TAG = "FsModelFragment";
 
     //Event Observer
     public interface OnScanProgressObserver {
-        void onScanProgressChanged(boolean finished, FileEntry lastProcessed);
+        void onScanProgressChanged(FileEntry lastProcessed);
     }
     //Observable manager
     private class ScanProgressObservable extends Observable<OnScanProgressObserver> {
-        public void notifyProgress(boolean finished, FileEntry lastProcessed) {
+        void notifyProgress(FileEntry lastProcessed) {
             for (final OnScanProgressObserver observer : mObservers) {
-                observer.onScanProgressChanged(finished, lastProcessed);
+                observer.onScanProgressChanged(lastProcessed);
             }
-        }
-    }
-    //Thread pool
-    public static class FsThreadPoolExecutor extends ThreadPoolExecutor {
-
-        private static final int ThreadCount = Runtime.getRuntime().availableProcessors();
-
-        //Members
-        public FsThreadPoolExecutor() {
-            super(0, ThreadCount, 15, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
         }
     }
 
     //Members
-    private final FsThreadPoolExecutor executor = new FsThreadPoolExecutor();
     private ScanProgressObservable eventListeners = new ScanProgressObservable();
     private FileEntry rootEntry;
-    private boolean scanFinished = false;
+    private FileEntry currentFsEntry;
 
     public FsModelFragment() {
         final String external_storage = System.getenv("EXTERNAL_STORAGE");
         rootEntry = new FileEntry();
+        currentFsEntry = rootEntry;
 
         if(external_storage != null) {
             FileEntry ext = new FileEntry(new File(external_storage), rootEntry);
+            rootEntry.Children.add(ext);
             ext.IsDirectory = true;
         }
 
         final String secondary_storage = System.getenv("SECONDARY_STORAGE");
         if(secondary_storage != null) {
             FileEntry sec = new FileEntry(new File(secondary_storage), rootEntry);
+            rootEntry.Children.add(sec);
             sec.IsDirectory = true;
         }
     }
@@ -73,56 +57,32 @@ public class FsModelFragment extends Fragment {
         setRetainInstance(true);
     }
 
-    public void shutdown() {
-        executor.shutdownNow();
-
-//        try {
-//            executor.awaitTermination(1, TimeUnit.SECONDS);
-//        } catch (InterruptedException e) {
-//            Log.d(TAG, "Shutdown awaitTermination timeout");
-//        }
-    }
-
     public FileEntry getRootEntry() {
         return rootEntry;
     }
 
-    public void scan() {
-        scanFinished = false;
-        synchronized (rootEntry.Children) {
-            for (FileEntry entry : rootEntry.Children) {
-                entry.clear();
-            }
-        }
-        queueScan(rootEntry, new ScanStack());
+    public FileEntry getCurrentFsEntry() {
+        return currentFsEntry;
     }
 
-    private void queueScan(final FileEntry entry, final ScanStack stack) {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                scanDir(entry, stack);
-            }
-        });
+    public void setCurrentFsEntry(FileEntry currentFsEntry) {
+        this.currentFsEntry = currentFsEntry;
     }
 
-    private void scanDir(FileEntry entry, ScanStack stack) {
-        //Scan directories
-        if(entry.Path == null)  {
-            synchronized (entry.Children) {
-                for (FileEntry fileEntry : entry.Children) {
-                    queueScan(fileEntry, stack.push(fileEntry.Path));
-                }
-            }
-        } else {
+    public void scan(FileEntry entry) {
+        scanDir(entry);
+    }
+
+    private void scanDir(FileEntry entry) {
+        //Scan directory
+        if (entry.Path != null) {
+            entry.clear();
+
             File[] contents = new File(entry.Path).listFiles((FileFilter)new MangaFileFilter());
-
             if(contents != null) {
                 for (File file : contents) {
-                    FileEntry fileEntry = new FileEntry(file, entry);
-                    if (file.isDirectory()) {
-                        queueScan(fileEntry, stack.push(fileEntry.Path));
-                    }
+                    FileEntry child = new FileEntry(file, entry);
+                    entry.Children.add(child);
                 }
                 entry.sort();
             } else {
@@ -130,9 +90,7 @@ public class FsModelFragment extends Fragment {
                 Log.w("Manga", "Access denied to: " + entry.Path);
             }
         }
-
-        scanFinished = stack.pop(entry.Path);
-        eventListeners.notifyProgress(scanFinished, entry);
+        eventListeners.notifyProgress(entry);
     }
 
     public void addChangeListener(final OnScanProgressObserver observer) {

@@ -1,6 +1,5 @@
 package com.agel.arch.mangaview.fragments.manga;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.ListFragment;
@@ -23,17 +22,14 @@ import java.util.List;
  * A placeholder fragment containing a simple view.
  */
 public class FileSystemFragment extends ListFragment implements FsModelFragment.OnScanProgressObserver {
-
-    public static final int UI_UPDATE_INTERVAL = 10000;
-
     private FileSystemAdapter listAdapter;
     private MainActivity mainActivity;
-    private long lastUIUpdate = 0;
+    private FsModelFragment fsModelFragment;
 
     @Override
     public void onDetach() {
         try {
-            mainActivity.getModelFragment().removeChangeListener(this);
+            fsModelFragment.removeChangeListener(this);
         } catch (Exception e) {
             Log.d("Manga", "Detach " + e.getMessage());
         }
@@ -49,20 +45,17 @@ public class FileSystemFragment extends ListFragment implements FsModelFragment.
         listAdapter = new FileSystemAdapter(getActivity(), R.layout.fs_item);
         setListAdapter(listAdapter);
 
-        if(mainActivity.getModelFragment() != null) {
-            mainActivity.getModelFragment().addChangeListener(this);
-            final List<FileEntry> children = mainActivity.getCurrentFsEntry().Children;
-            synchronized (children) {
-                listAdapter.addAll(children);
-            }
-        }
+        fsModelFragment = mainActivity.getFsModelFragment();
+        fsModelFragment.addChangeListener(this);
+        fsModelFragment.scan(fsModelFragment.getCurrentFsEntry());
     }
 
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
         FileEntry item = listAdapter.getItem(position);
         if(item.IsDirectory) {
-            setCurrentEntry(item);
+            fsModelFragment.setCurrentFsEntry(item);
+            fsModelFragment.scan(item);
         } else {
             Intent intent = new Intent(mainActivity, MangaViewActivity.class);
             intent.putExtra(MangaViewActivity.ImagePath, item.Path);
@@ -71,39 +64,18 @@ public class FileSystemFragment extends ListFragment implements FsModelFragment.
     }
 
     public boolean onBackPressed() {
-        if(mainActivity.getCurrentFsEntry() == mainActivity.getRootEntry()) {
+        if(mainActivity.getFsModelFragment().getCurrentFsEntry() == mainActivity.getFsModelFragment().getRootEntry()) {
             return true;
         }
-
-        setCurrentEntry(mainActivity.getCurrentFsEntry().Parent);
-
+        FileEntry parent = fsModelFragment.getCurrentFsEntry().Parent;
+        fsModelFragment.setCurrentFsEntry(parent);
+        fsModelFragment.scan(parent);
         return false;
     }
 
-    private void setCurrentEntry(FileEntry entry) {
-        mainActivity.setCurrentFsEntry(entry);
-        listAdapter.clear();
-        final List<FileEntry> entries = mainActivity.getCurrentFsEntry().Children;
-        synchronized (entries) {
-            listAdapter.addAll(entries);
-        }
-    }
-
     @Override
-    public void onScanProgressChanged(boolean finished, FileEntry entry) {
-        long time = new Date().getTime();
-        if(mainActivity.getCurrentFsEntry() == entry &&  time - lastUIUpdate > UI_UPDATE_INTERVAL) {
-            lastUIUpdate = time;
-            mainActivity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    listAdapter.clear();
-                    final List<FileEntry> entries = mainActivity.getCurrentFsEntry().Children;
-                    synchronized (entries) {
-                        listAdapter.addAll(entries);
-                    }
-                }
-            });
-        }
+    public void onScanProgressChanged(final FileEntry entry) {
+        listAdapter.clear();
+        listAdapter.addAll(entry.Children);
     }
 }

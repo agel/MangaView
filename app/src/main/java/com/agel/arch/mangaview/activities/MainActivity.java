@@ -49,9 +49,8 @@ public class MainActivity extends ActionBarActivity
     private ProgressBar progressBar;
 
     //FS state
-    private FsModelFragment modelFragment;
-    private FileEntry rootEntry;
-    private FileEntry currentFsEntry;
+    private FsModelFragment fsModelFragment;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,68 +122,36 @@ public class MainActivity extends ActionBarActivity
                     // functionality that depends on this permission.
                     this.finish();
                 }
-                return;
             }
-
-            // other 'case' lines to check for other
-            // permissions this app might request
         }
     }
 
     private void initStorage() {
-        modelFragment = (FsModelFragment) getFragmentManager().findFragmentByTag(FsModelFragment.TAG);
-        if(modelFragment == null) {
-            modelFragment = new FsModelFragment();
-            getFragmentManager().beginTransaction().add(modelFragment, FsModelFragment.TAG).commit();
+        fsModelFragment = (FsModelFragment) getFragmentManager().findFragmentByTag(FsModelFragment.TAG);
+        if(fsModelFragment == null) {
+            fsModelFragment = new FsModelFragment();
+            getFragmentManager().beginTransaction().add(fsModelFragment, FsModelFragment.TAG).commit();
         }
 
-        modelFragment.addChangeListener(this);
-
-        rootEntry = modelFragment.getRootEntry();
-        currentFsEntry = rootEntry;
-        setLoading(true);
-        modelFragment.scan();
-
-//        ((FileSystemFragment)currentFragment).onStorageInitialized();
+        fsModelFragment.addChangeListener(this);
     }
 
     @Override
     protected void onDestroy() {
         Log.d(TAG, "onDestroy");
         super.onDestroy();
-        if(modelFragment != null) {
-            modelFragment.removeChangeListener(this);
-            if (isFinishing()) {
-                modelFragment.shutdown();
-            }
+        if(fsModelFragment != null) {
+            fsModelFragment.removeChangeListener(this);
         }
     }
 
-    public FileEntry getRootEntry() {
-        return rootEntry;
-    }
-
-    public FileEntry getCurrentFsEntry() {
-        return currentFsEntry;
-    }
-
-    public FsModelFragment getModelFragment() {
-        return modelFragment;
-    }
-
-    public void setCurrentFsEntry(FileEntry currentFsEntry) {
-        this.currentFsEntry = currentFsEntry;
+    public FsModelFragment getFsModelFragment() {
+        return fsModelFragment;
     }
 
     @Override
-    public void onScanProgressChanged(boolean finished, FileEntry lastProcessed) {
-        if(finished) {
-            this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    setLoading(false);   }
-            });
-        }
+    public void onScanProgressChanged(FileEntry lastProcessed) {
+
     }
 
     public void setLoading(final boolean loading) {

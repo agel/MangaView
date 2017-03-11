@@ -16,7 +16,7 @@ public class FileEntry implements Comparable<FileEntry> {
     public Boolean IsDirectory;
     public String Name;
     public FileEntry Parent;
-    public final List<FileEntry> Children = Collections.synchronizedList(new ArrayList<FileEntry>());
+    public final List<FileEntry> Children = new ArrayList<>();
 
     public FileEntry() {
         Name = "Root";
@@ -28,13 +28,6 @@ public class FileEntry implements Comparable<FileEntry> {
         this.Name = file.getName();
         this.IsDirectory = file.isDirectory();
         this.Parent = parent;
-        parent.addAsChild(this);
-    }
-
-    private void addAsChild(FileEntry child) {
-        synchronized (Children){
-            Children.add(child);
-        }
     }
 
     @Override
@@ -57,14 +50,10 @@ public class FileEntry implements Comparable<FileEntry> {
     }
 
     public void clear() {
-        synchronized (Children) {
-            Children.clear();
-        }
+        Children.clear();
     }
 
     public void sort() {
-        synchronized (Children) {
-            Collections.sort(Children);
-        }
+        Collections.sort(Children);
     }
 }
